@@ -1604,6 +1604,85 @@ const { fullscreen = true } = Astro.props;
       svg.addEventListener('mousedown', handleMouseDown);
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+
+      // Expose board state + apply function for AI chat (Gecko)
+      (window as any).__gekkoBoardData = () => ({
+        nodes: [
+          ...planets.map(p => ({ node_key: p.id, cat: 'destination', title: p.t1, subtitle: p.t2, detail: p.detail, status: 'planned' })),
+          ...nodes.map(n => ({ node_key: n.id, cat: n.cat, title: n.title, subtitle: n.sub, detail: n.detail, status: n.status, url: n.url })),
+        ],
+        edges: edges.map(e => ({ from_node: e.f, to_node: e.t })),
+        meta: { ...boardMeta },
+      });
+
+      (window as any).__gekkoApply = (change: any) => {
+        const { type, node_key, new_key, fields, from_node, to_node } = change;
+        if (type === 'update_node') {
+          if (!node_key) return;
+          if (pmap[node_key]) {
+            const planet = pmap[node_key];
+            if (fields?.title) planet.t1 = fields.title;
+            if (fields?.subtitle !== undefined) planet.t2 = fields.subtitle || '';
+            if (fields?.detail !== undefined) planet.detail = fields.detail || '';
+            document.getElementById(`pl-${planet.id}`)?.remove();
+            delete pels[planet.id];
+            makePlanetEl(planet);
+            drawEdges();
+            const pal = pcm[planet.cid] || pcm.teal;
+            dbUpsertNode(planet.id, { cat: 'destination', title: planet.t1, subtitle: planet.t2, detail: planet.detail, x: planet.x, y: planet.y, color: pal.c, dark_color: pal.k, radius: planet.r });
+          } else if (nmap[node_key]) {
+            const nd = nmap[node_key];
+            if (fields?.title) nd.title = fields.title;
+            if (fields?.subtitle !== undefined) nd.sub = fields.subtitle || '';
+            if (fields?.detail !== undefined) nd.detail = fields.detail || '';
+            if (fields?.status) nd.status = normalizeStatus(fields.status);
+            if (fields?.url !== undefined) nd.url = normalizeNodeUrl(fields.url || '');
+            if (fields?.cat) nd.cat = normalizeCategory(fields.cat);
+            document.getElementById(`sn-${nd.id}`)?.remove();
+            delete nels[nd.id];
+            makeStarEl(nd);
+            drawEdges();
+            dbUpsertNode(nd.id, { cat: nd.cat, title: nd.title, subtitle: nd.sub, url: nd.url, detail: nd.detail, status: nd.status, x: nd.x, y: nd.y });
+          }
+        } else if (type === 'create_node') {
+          const key = new_key || `u${Date.now()}`;
+          const cat = fields?.cat || 'other';
+          if (cat === 'destination') {
+            const planet = { id: key, t1: fields?.title || 'New Goal', t2: fields?.subtitle || '', detail: fields?.detail || '', x: 450, y: 110, cid: 'teal', r: 68 };
+            planets.push(planet);
+            makePlanetEl(planet);
+            drawEdges();
+            const pal = pcm.teal;
+            dbInsertNode(key, { cat: 'destination', title: planet.t1, subtitle: planet.t2, detail: planet.detail, status: 'planned', x: planet.x, y: planet.y, color: pal.c, dark_color: pal.k, radius: planet.r });
+          } else {
+            const nd = { id: key, cat: normalizeCategory(cat), status: normalizeStatus(fields?.status || 'planned'), title: fields?.title || 'New Step', sub: fields?.subtitle || '', url: normalizeNodeUrl(fields?.url || ''), detail: fields?.detail || '', x: 400, y: 300 };
+            nodes.push(nd);
+            makeStarEl(nd);
+            drawEdges();
+            dbInsertNode(key, { cat: nd.cat, title: nd.title, subtitle: nd.sub, url: nd.url, detail: nd.detail, status: nd.status, x: nd.x, y: nd.y });
+          }
+        } else if (type === 'delete_node') {
+          if (!node_key) return;
+          if (pmap[node_key]) delP(node_key);
+          else if (nmap[node_key]) delN(node_key);
+        } else if (type === 'create_edge') {
+          if (!from_node || !to_node) return;
+          if (!edges.some(e => e.f === from_node && e.t === to_node)) {
+            edges.push({ f: from_node, t: to_node });
+            dbInsertEdge(from_node, to_node);
+            drawEdges();
+          }
+        } else if (type === 'delete_edge') {
+          if (!from_node || !to_node) return;
+          const idx = edges.findIndex(e => e.f === from_node && e.t === to_node);
+          if (idx >= 0) { edges.splice(idx, 1); dbDeleteEdge(from_node, to_node); drawEdges(); }
+        }
+        persistLocalState();
+      };
+
+      document.addEventListener('gekko:apply-change', (ev: Event) => {
+        (window as any).__gekkoApply((ev as CustomEvent).detail);
+      });
     };
 
     const loadBoard = async (user: { id: string }) => {

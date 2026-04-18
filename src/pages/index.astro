@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import CareerBoardEmbed from '../components/CareerBoardEmbed.astro';
 import ImpressumModal from '../components/ImpressumModal.astro';
 import AuthModal from '../components/AuthModal.astro';
+import ChatPanel from '../components/ChatPanel.astro';
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_KEY ?? '';
@@ -15,6 +16,7 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_KEY ?? '';
   <CareerBoardEmbed fullscreen={true} />
   <ImpressumModal />
   <AuthModal />
+  <ChatPanel />
 
   <div id="mode-ui"
     data-sb-url={supabaseUrl}

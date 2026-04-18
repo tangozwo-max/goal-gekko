@@ -1,0 +1,462 @@
+<!-- Gecko AI Chat Panel -->
+<button id="gekko-toggle" title="Chat with Gecko" aria-label="Open Gecko career consultant">
+  <img src="/images/goal_gekko.gif" alt="" width="28" height="28" style="border-radius:50%;object-fit:contain;">
+</button>
+
+<div id="gekko-panel" role="complementary" aria-label="Gecko career consultant">
+  <div id="gekko-hdr">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <img src="/images/goal_gekko.gif" alt="Gecko" width="22" height="22" style="border-radius:50%;object-fit:contain;">
+      <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.85);letter-spacing:.03em;">Gecko</span>
+      <span style="font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:.08em;text-transform:uppercase;">Career Strategy</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <div id="gekko-tier-wrap" style="display:flex;border:1px solid rgba(255,255,255,0.1);border-radius:6px;overflow:hidden;">
+        <button class="tier-btn" data-tier="fast" title="Fast · Haiku">⚡</button>
+        <button class="tier-btn active" data-tier="balanced" title="Balanced · Sonnet">⚡⚡</button>
+        <button class="tier-btn" data-tier="deep" title="Deep · Opus">⚡⚡⚡</button>
+      </div>
+      <button id="gekko-close" title="Close">✕</button>
+    </div>
+  </div>
+
+  <div id="gekko-msgs"></div>
+
+  <div id="gekko-input-wrap">
+    <textarea id="gekko-input" placeholder="Ask about your career strategy…" rows="2"></textarea>
+    <button id="gekko-send" title="Send (Enter)">↑</button>
+  </div>
+</div>
+
+<style>
+  #gekko-toggle {
+    position: fixed;
+    bottom: 66px;
+    right: 20px;
+    z-index: 85;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,255,136,0.3);
+    background: rgba(6,10,22,0.9);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    transition: border-color .2s, transform .2s;
+  }
+  #gekko-toggle:hover { border-color: rgba(0,255,136,0.7); transform: scale(1.06); }
+
+  #gekko-panel {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    width: 360px;
+    height: 100%;
+    z-index: 88;
+    background: rgba(5,8,20,0.97);
+    border-left: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    flex-direction: column;
+    transition: right .28s cubic-bezier(.4,0,.2,1);
+    backdrop-filter: blur(12px);
+    font-family: Inter, system-ui, sans-serif;
+  }
+  #gekko-panel.open { right: 0; }
+
+  #gekko-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+  }
+
+  .tier-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.35);
+    font-size: 10px;
+    padding: 4px 7px;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+    letter-spacing: .02em;
+  }
+  .tier-btn:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7); }
+  .tier-btn.active { background: rgba(0,255,136,0.1); color: rgba(0,255,136,0.85); }
+
+  #gekko-close {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.3);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: color .15s;
+    margin-left: 4px;
+  }
+  #gekko-close:hover { color: rgba(255,255,255,0.8); }
+
+  #gekko-msgs {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 14px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scroll-behavior: smooth;
+  }
+  #gekko-msgs::-webkit-scrollbar { width: 4px; }
+  #gekko-msgs::-webkit-scrollbar-track { background: transparent; }
+  #gekko-msgs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+  .msg-user {
+    align-self: flex-end;
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 10px 10px 2px 10px;
+    padding: 8px 11px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+    max-width: 85%;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .msg-ai {
+    align-self: flex-start;
+    max-width: 90%;
+  }
+  .msg-ai-bubble {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 2px 10px 10px 10px;
+    padding: 8px 11px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.78);
+    line-height: 1.65;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .msg-loading {
+    align-self: flex-start;
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    padding: 6px 4px;
+    letter-spacing: .04em;
+  }
+
+  .proposal-card {
+    margin-top: 8px;
+    border: 1px solid rgba(255,255,136,0.18);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: rgba(255,255,136,0.03);
+    font-size: 11px;
+  }
+  .proposal-card.accepted { border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.04); opacity: .7; }
+  .proposal-card.declined { border-color: rgba(255,255,255,0.06); opacity: .4; }
+  .proposal-type {
+    font-size: 8.5px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: rgba(255,220,100,0.6);
+    margin-bottom: 4px;
+  }
+  .proposal-desc {
+    color: rgba(255,255,255,0.8);
+    font-weight: 500;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  .proposal-reason {
+    color: rgba(255,255,255,0.4);
+    font-size: 10.5px;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .proposal-btns { display: flex; gap: 6px; }
+  .proposal-accept {
+    background: rgba(0,255,136,0.12);
+    border: 1px solid rgba(0,255,136,0.3);
+    color: rgba(0,255,136,0.9);
+    border-radius: 5px;
+    padding: 4px 11px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: background .15s;
+    font-family: inherit;
+  }
+  .proposal-accept:hover { background: rgba(0,255,136,0.22); }
+  .proposal-decline {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.35);
+    border-radius: 5px;
+    padding: 4px 11px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: background .15s;
+    font-family: inherit;
+  }
+  .proposal-decline:hover { background: rgba(255,255,255,0.05); }
+  .proposal-status {
+    font-size: 9px;
+    letter-spacing: .06em;
+    color: rgba(255,255,255,0.35);
+    margin-top: 2px;
+  }
+
+  #gekko-input-wrap {
+    border-top: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    align-items: flex-end;
+    gap: 0;
+    padding: 10px 12px;
+    flex-shrink: 0;
+  }
+  #gekko-input {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px 0 0 8px;
+    color: rgba(255,255,255,0.85);
+    font-size: 12px;
+    font-family: inherit;
+    padding: 8px 10px;
+    resize: none;
+    outline: none;
+    line-height: 1.5;
+    transition: border-color .15s;
+  }
+  #gekko-input:focus { border-color: rgba(0,255,136,0.3); }
+  #gekko-input::placeholder { color: rgba(255,255,255,0.25); }
+  #gekko-send {
+    background: rgba(0,255,136,0.12);
+    border: 1px solid rgba(0,255,136,0.25);
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    color: rgba(0,255,136,0.85);
+    font-size: 16px;
+    width: 38px;
+    align-self: stretch;
+    cursor: pointer;
+    transition: background .15s;
+    font-family: inherit;
+  }
+  #gekko-send:hover { background: rgba(0,255,136,0.22); }
+  #gekko-send:disabled { opacity: .4; cursor: default; }
+</style>
+
+<script>
+  // v1
+  const panel    = document.getElementById('gekko-panel');
+  const toggle   = document.getElementById('gekko-toggle');
+  const closeBtn = document.getElementById('gekko-close');
+  const msgList  = document.getElementById('gekko-msgs');
+  const inputEl  = document.getElementById('gekko-input') as HTMLTextAreaElement | null;
+  const sendBtn  = document.getElementById('gekko-send') as HTMLButtonElement | null;
+
+  if (!panel || !toggle || !closeBtn || !msgList || !inputEl || !sendBtn) {
+    // Component not mounted — skip
+  } else {
+    const convMessages: { role: 'user' | 'assistant'; content: string }[] = [];
+    let currentTier = 'balanced';
+    let isLoading = false;
+
+    // Open / close
+    toggle.addEventListener('click', () => {
+      panel.classList.toggle('open');
+      if (panel.classList.contains('open')) scrollBottom();
+    });
+    closeBtn.addEventListener('click', () => panel.classList.remove('open'));
+
+    // Tier buttons
+    document.querySelectorAll<HTMLButtonElement>('.tier-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        currentTier = btn.dataset.tier || 'balanced';
+        document.querySelectorAll('.tier-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    const scrollBottom = () => {
+      requestAnimationFrame(() => { msgList.scrollTop = msgList.scrollHeight; });
+    };
+
+    const appendMsg = (el: HTMLElement) => {
+      msgList.appendChild(el);
+      scrollBottom();
+    };
+
+    const addUserMsg = (text: string) => {
+      const el = document.createElement('div');
+      el.className = 'msg-user';
+      el.textContent = text;
+      appendMsg(el);
+    };
+
+    const addAiMsg = (text: string, proposals: any[]) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'msg-ai';
+
+      if (text) {
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-ai-bubble';
+        bubble.textContent = text;
+        wrapper.appendChild(bubble);
+      }
+
+      proposals.forEach((change, idx) => {
+        const card = document.createElement('div');
+        card.className = 'proposal-card';
+
+        const typeLabel = document.createElement('div');
+        typeLabel.className = 'proposal-type';
+        typeLabel.textContent = formatChangeType(change.type);
+        card.appendChild(typeLabel);
+
+        const desc = document.createElement('div');
+        desc.className = 'proposal-desc';
+        desc.textContent = describeChange(change);
+        card.appendChild(desc);
+
+        if (change.reason) {
+          const reason = document.createElement('div');
+          reason.className = 'proposal-reason';
+          reason.textContent = change.reason;
+          card.appendChild(reason);
+        }
+
+        const btns = document.createElement('div');
+        btns.className = 'proposal-btns';
+
+        const acceptBtn = document.createElement('button');
+        acceptBtn.className = 'proposal-accept';
+        acceptBtn.textContent = '✓ Accept';
+        acceptBtn.addEventListener('click', () => {
+          document.dispatchEvent(new CustomEvent('gekko:apply-change', { detail: change }));
+          card.classList.add('accepted');
+          const status = document.createElement('div');
+          status.className = 'proposal-status';
+          status.textContent = '✓ Applied';
+          btns.replaceWith(status);
+        });
+
+        const declineBtn = document.createElement('button');
+        declineBtn.className = 'proposal-decline';
+        declineBtn.textContent = '✕ Decline';
+        declineBtn.addEventListener('click', () => {
+          card.classList.add('declined');
+          const status = document.createElement('div');
+          status.className = 'proposal-status';
+          status.textContent = '— Declined';
+          btns.replaceWith(status);
+        });
+
+        btns.appendChild(acceptBtn);
+        btns.appendChild(declineBtn);
+        card.appendChild(btns);
+        wrapper.appendChild(card);
+      });
+
+      appendMsg(wrapper);
+    };
+
+    let loadingEl: HTMLElement | null = null;
+    const showLoading = (on: boolean) => {
+      if (on) {
+        loadingEl = document.createElement('div');
+        loadingEl.className = 'msg-loading';
+        loadingEl.textContent = 'Gecko is thinking…';
+        appendMsg(loadingEl);
+      } else {
+        loadingEl?.remove();
+        loadingEl = null;
+      }
+    };
+
+    const sendMessage = async () => {
+      const text = inputEl.value.trim();
+      if (!text || isLoading) return;
+
+      convMessages.push({ role: 'user', content: text });
+      inputEl.value = '';
+      addUserMsg(text);
+
+      isLoading = true;
+      sendBtn.disabled = true;
+      showLoading(true);
+
+      try {
+        const boardState = (window as any).__gekkoBoardData?.();
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: convMessages, boardState, tier: currentTier }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: res.statusText }));
+          addAiMsg(`Error: ${err?.error || res.statusText}`, []);
+          return;
+        }
+
+        const data = await res.json();
+        const replyText: string = data.text || '';
+        const proposals: any[] = data.proposals || [];
+
+        if (replyText || proposals.length) {
+          convMessages.push({ role: 'assistant', content: replyText });
+        }
+        addAiMsg(replyText, proposals);
+      } catch (err: any) {
+        addAiMsg(`Connection error: ${err?.message || 'unknown'}`, []);
+      } finally {
+        isLoading = false;
+        sendBtn.disabled = false;
+        showLoading(false);
+      }
+    };
+
+    sendBtn.addEventListener('click', sendMessage);
+    inputEl.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+
+    // --- helpers ---
+    const formatChangeType = (type: string) => {
+      const map: Record<string, string> = {
+        create_node: 'Add node',
+        update_node: 'Update node',
+        delete_node: 'Remove node',
+        create_edge: 'Add connection',
+        delete_edge: 'Remove connection',
+      };
+      return map[type] || type;
+    };
+
+    const describeChange = (change: any): string => {
+      switch (change.type) {
+        case 'create_node':
+          return `"${change.fields?.title || change.new_key}" (${change.fields?.cat || 'node'})`;
+        case 'update_node':
+          return `Update "${change.node_key}"${change.fields?.title ? ` → title: "${change.fields.title}"` : ''}${change.fields?.status ? ` · status: ${change.fields.status}` : ''}`;
+        case 'delete_node':
+          return `Remove "${change.node_key}"`;
+        case 'create_edge':
+          return `${change.from_node} → ${change.to_node}`;
+        case 'delete_edge':
+          return `Remove ${change.from_node} → ${change.to_node}`;
+        default:
+          return change.type;
+      }
+    };
+  }
+</script>
