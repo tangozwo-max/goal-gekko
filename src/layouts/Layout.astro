@@ -1,0 +1,29 @@
+---
+import SEOHead from '../components/SEOHead.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <SEOHead title={title} description={description} />
+  </head>
+  <body class="fullscreen-layout-body">
+    <slot />
+    <script is:inline>
+      document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('[data-em]').forEach(function(el) {
+          var e = atob(el.getAttribute('data-em'));
+          el.setAttribute('href', 'mailto:' + e);
+          if (el.textContent.replace(/\s/g,'').indexOf('@') === -1) el.textContent = e;
+        });
+      });
+    </script>
+  </body>
+</html>

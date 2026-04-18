@@ -1,0 +1,88 @@
+<div class="impressum-modal hidden" data-impressum-modal aria-hidden="true">
+  <div class="impressum-modal__backdrop" data-impressum-close></div>
+  <div class="impressum-modal__panel" role="dialog" aria-modal="true" aria-labelledby="impressum-modal-title">
+    <button type="button" class="impressum-modal__close" aria-label="Impressum schließen" data-impressum-close>
+      ×
+    </button>
+
+    <p class="impressum-modal__eyebrow">Legal</p>
+    <h2 id="impressum-modal-title" class="impressum-modal__title">Impressum</h2>
+
+    <div class="impressum-modal__content">
+      <section>
+        <h3>Angaben gemäß § 5 TMG</h3>
+        <p>
+          Alessandro Cancemi<br />
+          Hohenzollernring 1-3<br />
+          50672 Köln
+        </p>
+      </section>
+
+      <section>
+        <h3>Kontakt</h3>
+        <p>
+          E-Mail:
+          <a data-em="aW5mb0BjYW5jZW1pLmRl" href="#" class="impressum-modal__link">info&#64;cancemi&#46;de</a>
+        </p>
+      </section>
+
+      <section>
+        <h3>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</h3>
+        <p>
+          Alessandro Cancemi<br />
+          Hohenzollernring 1-3<br />
+          50672 Köln
+        </p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+  const modal = document.querySelector('[data-impressum-modal]');
+
+  if (modal instanceof HTMLElement) {
+    const closeButtons = modal.querySelectorAll('[data-impressum-close]');
+
+    const openModal = () => {
+      modal.classList.remove('hidden');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('impressum-modal-open');
+    };
+
+    const closeModal = () => {
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('impressum-modal-open');
+    };
+
+    document.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const trigger = target.closest('[data-impressum-trigger]');
+      if (!trigger) return;
+
+      event.preventDefault();
+      openModal();
+    });
+
+    closeButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        closeModal();
+      });
+    });
+
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        closeModal();
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+        closeModal();
+      }
+    });
+  }
+</script>

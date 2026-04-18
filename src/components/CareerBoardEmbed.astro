@@ -1,0 +1,1552 @@
+---
+const { fullscreen = true } = Astro.props;
+---
+
+<section
+  class:list={['career-board-app', fullscreen && 'career-board-app--fullscreen']}
+  data-career-board-root
+>
+  <div class:list={['career-board-shell', fullscreen && 'career-board-shell--fullscreen']}>
+    <div class="career-board-shell__state" data-career-board-state>
+      Loading board...
+    </div>
+    <div class="career-board-shell__mount hidden" data-career-board-mount></div>
+  </div>
+</section>
+
+<script>
+  import { CAREER_BOARD_PUBLIC_SEED_NODES, CAREER_BOARD_PUBLIC_SEED_EDGES } from '../lib/career-board-seed';
+
+  const DEFAULT_BOARD_META = {
+    homeTitle: 'IT Director',
+    homeLine1: '15yr · Enterprise IT · Digital Transformation · Cloud',
+    homeLine2: 'Infrastructure · Governance · Global Teams · Budget Owner',
+    homeDetail: '15yr Enterprise IT Leadership\nDigital Transformation · Cloud Strategy · GRC\nGlobal Teams · EUR 10M+ Budget Responsibility',
+    timelineNear: '3 months',
+    timelineMid: '6 months',
+    timelineFar: 'Future',
+  };
+
+  const boardRoots = document.querySelectorAll('[data-career-board-root]');
+
+  boardRoots.forEach((root) => {
+    if (!(root instanceof HTMLElement)) return;
+
+    const stateEl = root.querySelector('[data-career-board-state]');
+    const mountEl = root.querySelector('[data-career-board-mount]');
+
+    if (!(stateEl instanceof HTMLElement) || !(mountEl instanceof HTMLElement)) return;
+
+    const db = null;
+
+    const showBoard = () => {
+      stateEl.classList.add('hidden');
+      mountEl.classList.remove('hidden');
+    };
+
+    const PUBLIC_STORAGE_KEY = 'career-board:local';
+
+    const openPublicBoard = () => {
+      let nodes = CAREER_BOARD_PUBLIC_SEED_NODES.map((node) => ({ ...node }));
+      let edges = CAREER_BOARD_PUBLIC_SEED_EDGES.map((edge) => ({ ...edge }));
+      let meta = { ...DEFAULT_PUBLIC_BOARD_META };
+
+      try {
+        const raw = window.localStorage.getItem(PUBLIC_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed?.nodes) && Array.isArray(parsed?.edges)) {
+            nodes = parsed.nodes;
+            edges = parsed.edges;
+            meta = { ...DEFAULT_PUBLIC_BOARD_META, ...(parsed?.meta || {}) };
+          }
+        }
+      } catch {
+        // use defaults
+      }
+
+      renderBoard({
+        container: mountEl,
+        boardId: 'local',
+        userId: 'local',
+        initialNodes: nodes,
+        initialEdges: edges,
+        initialMeta: meta,
+        db: null,
+        persistenceMode: 'local',
+        storageKey: PUBLIC_STORAGE_KEY,
+        showResetBtn: true,
+      });
+
+      showBoard();
+    };
+
+    const renderBoard = ({ container, boardId, userId, initialNodes, initialEdges, initialMeta, db, persistenceMode, storageKey, notice, showResetBtn = false }) => {
+      const noticeMarkup = notice
+        ? `<div class="pnl" style="display:block;"><div style="font-size:12px;color:#e5e7eb;"><strong>Local mode.</strong> ${notice}</div></div>`
+        : '';
+      const privacyModalMarkup = showResetBtn ? `
+<div id="privacy-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(4,8,20,0.90);backdrop-filter:blur(6px);overflow-y:auto;padding:32px 16px;">
+  <div id="privacy-panel" style="max-width:520px;margin:0 auto;padding:32px 28px 28px;background:#06091a;border:1px solid rgba(255,255,255,0.07);border-radius:14px;position:relative;cursor:pointer;">
+    <button id="close-privacy-btn" style="position:absolute;top:14px;right:14px;background:none;border:none;color:rgba(255,255,255,0.35);font-size:16px;cursor:pointer;line-height:1;padding:4px 8px;border-radius:4px;transition:color .15s;" onmouseover="this.style.color='rgba(255,255,255,0.85)'" onmouseout="this.style.color='rgba(255,255,255,0.35)'">✕</button>
+    <div style="text-align:center;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <img src="/images/goal_gekko.gif" alt="Goal-Gekko" style="width:56px;height:56px;object-fit:contain;display:block;margin:0 auto 12px;">
+      <p style="font-size:8px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:7px;">GOAL-GEKKO</p>
+      <p style="font-size:19px;font-weight:300;color:rgba(255,255,255,0.80);letter-spacing:.01em;line-height:1.2;">Welcome to your Future</p>
+    </div>
+    <p style="font-size:8.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,0.25);margin-bottom:20px;">Datenschutz</p>
+    <div style="border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:14px 16px;margin-bottom:20px;background:rgba(255,255,255,0.03);">
+      <p style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.75);margin-bottom:6px;">Kein Tracking. Keine Profile. Keine versteckten Zwecke.</p>
+      <p style="font-size:10.5px;line-height:1.7;color:rgba(255,255,255,0.45);">Wir verarbeiten so wenig Daten wie möglich. Was wir erheben, dient ausschließlich dem Betrieb der App — nicht der Analyse, Profilbildung oder Vermarktung. Keine Tracking-Pixel, keine Werbenetzwerke, kein Weiterverkauf. Das gilt für alle Produkte und Webseiten unter Rio Siera.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;font-size:10.5px;line-height:1.75;color:rgba(255,255,255,0.48);">
+      <div><p style="font-size:8px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:5px;">Kurz gesagt</p><p>Goal-Gekko speichert keine Daten auf einem Server. Alle Boarddaten verlassen Ihr Gerät nicht. Es werden keine Cookies zu Tracking- oder Marketingzwecken eingesetzt.</p></div>
+      <div><p style="font-size:8px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:5px;">Lokaler Speicher</p><p>Gespeichert werden ausschließlich Ihre Boardinhalte: Ziele, Zwischenschritte, Verbindungen, Positionen und Labels — im localStorage Ihres Browsers unter dem Schlüssel <code style="font-size:9px;background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:3px;">career-board:local</code>. localStorage ist kein Cookie — die Daten werden nicht automatisch an Server übermittelt.</p></div>
+      <div><p style="font-size:8px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:5px;">Löschen</p><p>Alle gespeicherten Daten lassen sich jederzeit über den ↺-Button im Board vollständig löschen. Alternativ direkt über die Browser-Entwicklerwerkzeuge (Anwendung → Lokaler Speicher).</p></div>
+      <div><p style="font-size:8px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:5px;">Hosting</p><p>Die App wird bei Vercel bereitgestellt. Vercel verarbeitet technische Verbindungsdaten (IP-Adresse, Zugriffszeitpunkt, Browserinformationen). Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO.</p></div>
+      <div><p style="font-size:8px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:5px;">Kein Tracking</p><p>Es werden keine Analyse-Dienste eingesetzt. Keine Nutzerprofile, keine Verhaltensdaten, keine Drittanbieter-Scripts.</p></div>
+      <div><p style="font-size:8px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:5px;">Verantwortlicher</p><p>Alessandro Cancemi · Hohenzollernring 1-3 · 50672 Köln · <a href="mailto:${atob('aW5mb0BjYW5jZW1pLmRl')}" style="color:inherit;">info&#64;cancemi&#46;de</a></p></div>
+    </div>
+    <p style="font-size:8.5px;color:rgba(255,255,255,0.18);margin-top:22px;">Stand: April 2026</p>
+  </div>
+</div>` : '';
+
+      const fixedControlsMarkup = showResetBtn ? `
+<div style="position:fixed;bottom:18px;right:22px;display:flex;align-items:flex-end;gap:10px;z-index:60;pointer-events:auto;">
+  <a id="privacy-link" href="#" style="font-size:9px;color:rgba(255,255,255,0.22);text-decoration:none;transition:color .2s, transform .2s;letter-spacing:.04em;transform:translateY(-10px);" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Datenschutz</a>
+  <button id="impressum-link" type="button" data-impressum-trigger style="font-size:9px;color:rgba(255,255,255,0.22);background:none;border:none;padding:0;cursor:pointer;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Impressum</button>
+</div>
+<div style="position:fixed;top:20px;right:20px;z-index:50;display:flex;gap:8px;align-items:center;">
+  <button id="help-btn" title="How it works" style="background:none;border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:29px;height:29px;cursor:pointer;color:rgba(255,255,255,0.30);font-size:14px;font-weight:600;line-height:1;padding:0;opacity:0.7;transition:opacity .2s,color .2s,border-color .2s;" onmouseover="this.style.opacity='1';this.style.color='rgba(255,255,255,0.72)';this.style.borderColor='rgba(255,255,255,0.32)'" onmouseout="this.style.opacity='0.7';this.style.color='rgba(255,255,255,0.30)';this.style.borderColor='rgba(255,255,255,0.12)'">?</button>
+  <button id="clear-btn" title="Board leeren" style="background:none;border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:29px;height:29px;cursor:pointer;color:rgba(255,255,255,0.30);font-size:14px;line-height:1;padding:0;opacity:0.7;transition:opacity .2s,color .2s,border-color .2s;" onmouseover="this.style.opacity='1';this.style.color='rgba(255,255,255,0.72)';this.style.borderColor='rgba(255,255,255,0.32)'" onmouseout="this.style.opacity='0.7';this.style.color='rgba(255,255,255,0.30)';this.style.borderColor='rgba(255,255,255,0.12)'">⊘</button>
+  <button id="reset-btn" title="Board zurücksetzen" style="background:none;border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:29px;height:29px;cursor:pointer;color:rgba(255,255,255,0.30);font-size:16px;line-height:1;padding:0;opacity:0.7;transition:opacity .2s,color .2s,border-color .2s;" onmouseover="this.style.opacity='1';this.style.color='rgba(255,255,255,0.72)';this.style.borderColor='rgba(255,255,255,0.32)'" onmouseout="this.style.opacity='0.7';this.style.color='rgba(255,255,255,0.30)';this.style.borderColor='rgba(255,255,255,0.12)'">↺</button>
+</div>
+<div id="help-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(4,8,20,0.93);backdrop-filter:blur(8px);overflow-y:auto;padding:20px 16px;">
+  <div id="help-panel" style="max-width:420px;margin:0 auto;padding:28px 24px 24px;background:#06091a;border:1px solid rgba(255,255,255,0.08);border-radius:16px;position:relative;">
+    <button id="close-help-btn" style="position:absolute;top:14px;right:14px;background:none;border:none;color:rgba(255,255,255,0.35);font-size:16px;cursor:pointer;line-height:1;padding:4px 8px;border-radius:4px;transition:color .15s;" onmouseover="this.style.color='rgba(255,255,255,0.85)'" onmouseout="this.style.color='rgba(255,255,255,0.35)'">✕</button>
+    <div style="text-align:center;margin-bottom:16px;">
+      <img src="/images/goal_gekko.gif" alt="Goal-Gekko" style="width:42px;height:42px;object-fit:contain;display:block;margin:0 auto 8px;">
+      <p style="font-size:7px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,255,255,0.22);">GOAL-GEKKO</p>
+    </div>
+    <div style="display:flex;justify-content:center;gap:8px;margin-bottom:22px;">
+      <span id="hd-1" style="width:6px;height:6px;border-radius:50%;background:#378ADD;opacity:1;display:inline-block;transition:opacity .25s;"></span>
+      <span id="hd-2" style="width:6px;height:6px;border-radius:50%;background:#378ADD;opacity:0.28;display:inline-block;transition:opacity .25s;"></span>
+      <span id="hd-3" style="width:6px;height:6px;border-radius:50%;background:#378ADD;opacity:0.28;display:inline-block;transition:opacity .25s;"></span>
+      <span id="hd-4" style="width:6px;height:6px;border-radius:50%;background:#378ADD;opacity:0.28;display:inline-block;transition:opacity .25s;"></span>
+    </div>
+    <div id="hs-1">
+      <div style="text-align:center;margin-bottom:18px;"><svg width="180" height="88" viewBox="0 0 180 88" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="22" cy="16" r="0.8" fill="rgba(184,212,255,0.35)"/><circle cx="158" cy="11" r="0.6" fill="rgba(184,212,255,0.3)"/><circle cx="100" cy="20" r="0.7" fill="rgba(184,212,255,0.25)"/><circle cx="50" cy="36" r="0.5" fill="rgba(184,212,255,0.2)"/><circle cx="145" cy="30" r="0.7" fill="rgba(184,212,255,0.28)"/><circle cx="72" cy="9" r="0.5" fill="rgba(184,212,255,0.22)"/><circle cx="90" cy="68" r="28" fill="rgba(55,138,221,0.07)"/><circle cx="90" cy="68" r="19" fill="#04081A" stroke="rgba(92,174,255,0.52)" stroke-width="1.4"/><circle cx="90" cy="68" r="12" fill="rgba(92,174,255,0.07)"/><text x="90" y="72" text-anchor="middle" fill="rgba(255,255,255,0.62)" font-size="7.5" font-family="system-ui,sans-serif">YOU · TODAY</text></svg></div>
+      <p style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:7px;">Step 1 — Starting Point</p>
+      <p style="font-size:17px;font-weight:300;color:rgba(255,255,255,0.88);margin-bottom:12px;line-height:1.3;">Define who and where you are today</p>
+      <p style="font-size:12.5px;line-height:1.85;color:rgba(255,255,255,0.52);">The large circle at the bottom of the board is your <strong style="color:rgba(255,255,255,0.78);">Home Planet</strong> — that's you, right now. Click it to enter your name, current role and a short background. Be honest about where you're starting from.</p>
+    </div>
+    <div id="hs-2" style="display:none;">
+      <div style="text-align:center;margin-bottom:18px;"><svg width="180" height="78" viewBox="0 0 180 78" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="30" r="22" fill="rgba(29,158,117,0.07)"/><circle cx="30" cy="30" r="15" fill="#041510" stroke="rgba(29,158,117,0.58)" stroke-width="1.2"/><circle cx="30" cy="30" r="9" fill="rgba(29,158,117,0.07)"/><text x="30" y="34" text-anchor="middle" fill="rgba(255,255,255,0.55)" font-size="6.5" font-family="system-ui">Goal A</text><circle cx="90" cy="27" r="26" fill="rgba(55,138,221,0.07)"/><circle cx="90" cy="27" r="18" fill="#040D1C" stroke="rgba(55,138,221,0.58)" stroke-width="1.5"/><circle cx="90" cy="27" r="11" fill="rgba(55,138,221,0.07)"/><text x="90" y="31" text-anchor="middle" fill="rgba(255,255,255,0.55)" font-size="6.5" font-family="system-ui">Goal B</text><circle cx="152" cy="30" r="22" fill="rgba(232,128,58,0.07)"/><circle cx="152" cy="30" r="15" fill="#1C0C02" stroke="rgba(232,128,58,0.58)" stroke-width="1.2"/><circle cx="152" cy="30" r="9" fill="rgba(232,128,58,0.07)"/><text x="152" y="34" text-anchor="middle" fill="rgba(255,255,255,0.55)" font-size="6.5" font-family="system-ui">Goal C</text><text x="90" y="72" text-anchor="middle" fill="rgba(255,255,255,0.18)" font-size="7" font-family="system-ui">up to three destinations</text></svg></div>
+      <p style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:7px;">Step 2 — Destinations</p>
+      <p style="font-size:17px;font-weight:300;color:rgba(255,255,255,0.88);margin-bottom:12px;line-height:1.3;">Set your goals — who do you want to become?</p>
+      <p style="font-size:12.5px;line-height:1.85;color:rgba(255,255,255,0.52);">Add up to three <strong style="color:rgba(255,255,255,0.78);">Destination Planets</strong> at the top of the board. Each one represents a future role, position or life situation — even in completely different directions. Right-click to add or edit a planet.</p>
+    </div>
+    <div id="hs-3" style="display:none;">
+      <div style="text-align:center;margin-bottom:18px;"><svg width="180" height="78" viewBox="0 0 180 78" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="28" r="16" fill="rgba(43,148,108,0.28)" stroke="#8FE0BC" stroke-width="1"/><text x="30" y="32" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="7.5" font-family="system-ui">Job</text><text x="30" y="56" text-anchor="middle" fill="rgba(255,255,255,0.28)" font-size="6" font-family="system-ui">roles &amp; projects</text><circle cx="90" cy="28" r="16" fill="rgba(95,123,214,0.28)" stroke="#B8C6FF" stroke-width="1"/><text x="90" y="32" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="7.5" font-family="system-ui">Education</text><text x="90" y="56" text-anchor="middle" fill="rgba(255,255,255,0.28)" font-size="6" font-family="system-ui">courses &amp; certs</text><circle cx="152" cy="28" r="16" fill="rgba(176,92,68,0.28)" stroke="#FFB59E" stroke-width="1"/><text x="152" y="32" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="7.5" font-family="system-ui">Other</text><text x="152" y="56" text-anchor="middle" fill="rgba(255,255,255,0.28)" font-size="6" font-family="system-ui">anything else</text></svg></div>
+      <p style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:7px;">Step 3 — Milestones</p>
+      <p style="font-size:17px;font-weight:300;color:rgba(255,255,255,0.88);margin-bottom:12px;line-height:1.3;">Define the path — your steps in between</p>
+      <p style="font-size:12.5px;line-height:1.85;color:rgba(255,255,255,0.52);">Place <strong style="color:rgba(255,255,255,0.78);">milestone stars</strong> between you and your goals — the concrete steps that move you forward. Three types: <strong style="color:#8FE0BC;">Job</strong> (roles, projects), <strong style="color:#B8C6FF;">Education</strong> (courses, certs, degrees), <strong style="color:#FFB59E;">Other</strong> (networking, marketing, side projects — anything that matters).</p>
+    </div>
+    <div id="hs-4" style="display:none;">
+      <div style="text-align:center;margin-bottom:18px;"><svg width="180" height="82" viewBox="0 0 180 82" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="90" cy="70" r="11" fill="#04081A" stroke="rgba(92,174,255,0.5)" stroke-width="1"/><text x="90" y="73.5" text-anchor="middle" fill="rgba(255,255,255,0.45)" font-size="5.5" font-family="system-ui">YOU</text><circle cx="90" cy="12" r="14" fill="#041510" stroke="rgba(29,158,117,0.6)" stroke-width="1.1"/><text x="90" y="15.5" text-anchor="middle" fill="rgba(255,255,255,0.45)" font-size="5.5" font-family="system-ui">GOAL</text><circle cx="40" cy="42" r="11" fill="rgba(43,148,108,0.25)" stroke="#8FE0BC" stroke-width="0.9"/><circle cx="140" cy="42" r="11" fill="rgba(95,123,214,0.25)" stroke="#B8C6FF" stroke-width="0.9"/><line x1="90" y1="59" x2="50" y2="52" stroke="rgba(255,255,255,0.22)" stroke-width="1"/><line x1="90" y1="59" x2="130" y2="52" stroke="rgba(255,255,255,0.22)" stroke-width="1"/><line x1="46" y1="31" x2="82" y2="23" stroke="rgba(255,255,255,0.22)" stroke-width="1"/><line x1="134" y1="31" x2="99" y2="23" stroke="rgba(255,255,255,0.22)" stroke-width="1"/><text x="90" y="80" text-anchor="middle" fill="rgba(255,255,255,0.2)" font-size="6" font-family="system-ui">right-click to edit &amp; connect · drag to move</text></svg></div>
+      <p style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:7px;">Step 4 — Connect &amp; Print</p>
+      <p style="font-size:17px;font-weight:300;color:rgba(255,255,255,0.88);margin-bottom:12px;line-height:1.3;">Connect the dots — then hang it on your wall</p>
+      <p style="font-size:12.5px;line-height:1.85;color:rgba(255,255,255,0.52);"><strong style="color:rgba(255,255,255,0.78);">Right-click</strong> any element to edit, connect or delete. <strong style="color:rgba(255,255,255,0.78);">Drag</strong> to reposition freely. When done, print your board (<strong style="color:rgba(255,255,255,0.78);">Ctrl / ⌘ + P</strong>) and hang it somewhere visible. Everything is stored in your browser — no account, no server.</p>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);">
+      <button id="help-prev" style="background:none;border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 16px;color:rgba(255,255,255,0.38);font-size:12px;cursor:default;opacity:0.3;transition:opacity .2s,border-color .2s;">← Back</button>
+      <button id="help-next" style="background:#378ADD;border:none;border-radius:8px;padding:8px 22px;color:rgba(255,255,255,0.95);font-size:13px;font-weight:500;cursor:pointer;letter-spacing:.02em;transition:opacity .2s;" onmouseover="this.style.opacity='0.82'" onmouseout="this.style.opacity='1'">Next →</button>
+    </div>
+    <p style="text-align:center;margin-top:14px;"><a id="help-more-link" href="#" style="font-size:9px;color:rgba(255,255,255,0.2);text-decoration:none;letter-spacing:.03em;transition:color .15s;" onmouseover="this.style.color='rgba(255,255,255,0.45)'" onmouseout="this.style.color='rgba(255,255,255,0.2)'">More about data &amp; privacy ↓</a></p>
+    <div id="help-detail" style="display:none;margin-top:12px;padding:14px;border:1px solid rgba(255,255,255,0.07);border-radius:8px;background:rgba(255,255,255,0.02);">
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:10px;line-height:1.75;color:rgba(255,255,255,0.38);">
+        <p><strong style="color:rgba(255,255,255,0.55);">Your data</strong> — Everything stays in your browser (localStorage). No server, no account, no tracking. Use ⊘ to clear or ↺ to reload the example board.</p>
+        <p><strong style="color:rgba(255,255,255,0.55);">Time bands</strong> — Three horizontal zones: 3 months, 6 months, Future. Place stars in the zone that matches your timeline. Click a band label to rename it.</p>
+        <p><strong style="color:rgba(255,255,255,0.55);">Add stars</strong> — Right-click on any empty area of the board to add a new star at exactly that position.</p>
+        <p><strong style="color:rgba(255,255,255,0.55);">Contact</strong> — Alessandro Cancemi · ${atob('aW5mb0BjYW5jZW1pLmRl')} · <a href="/goal-gekko-datenschutz" style="color:rgba(92,174,255,0.65);text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Full privacy policy</a></p>
+      </div>
+    </div>
+  </div>
+</div>` : '';
+
+      container.innerHTML = `
+<div class="wrap">
+  ${noticeMarkup}
+  <div class="bar" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
+    <span id="hint" class="hint" style="display:block;">Hover for info · drag to move · right-click for options</span>
+  </div>
+  <div class="leg" style="position:fixed;bottom:20px;left:20px;z-index:50;display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
+    <span><svg width="9" height="9" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="rgba(43,148,108,0.34)" stroke="#8fe0bc" stroke-width="0.8"/></svg>Job</span>
+    <span><svg width="9" height="9" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="rgba(176,92,68,0.34)" stroke="#ffb59e" stroke-width="0.8"/></svg>Other</span>
+    <span><svg width="9" height="9" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="rgba(95,123,214,0.34)" stroke="#b8c6ff" stroke-width="0.8"/></svg>Education</span>
+  </div>
+  <div id="pep" class="pnl">
+    <div class="pnl-h"><span id="pep-h">Edit planet</span><button class="btn" data-action="closePep">✕</button></div>
+    <input id="pe-t" placeholder="Title (inside planet)">
+    <input id="pe-s" placeholder="Subtitle - use · as line break">
+    <textarea id="pe-d" rows="2" placeholder="Detail on hover"></textarea>
+    <label>Color</label>
+    <div id="pe-c" class="clrs"></div>
+    <div class="pnl-btns"><button class="btn" data-action="savePep">Save</button><button class="btn" data-action="closePep">Cancel</button></div>
+  </div>
+  <div id="sep" class="pnl">
+    <div class="pnl-h"><span>Edit node</span><button class="btn" data-action="closeSep">✕</button></div>
+    <input id="se-t" placeholder="Title"><input id="se-s" placeholder="Subtitle">
+    <input id="se-u" placeholder="URL (optional)">
+    <textarea id="se-d" rows="2" placeholder="Detail on hover"></textarea>
+    <div class="row2">
+      <select id="se-c"></select>
+      <select id="se-st"><option value="planned">Planned</option><option value="ongoing">Ongoing</option><option value="done">Completed</option></select>
+    </div>
+    <div class="pnl-btns"><button class="btn" data-action="saveSep">Save</button><button class="btn" data-action="closeSep">Cancel</button></div>
+  </div>
+  <div id="sap" class="pnl">
+    <div class="pnl-h"><span>New star</span><button class="btn" data-action="closeSap">✕</button></div>
+    <input id="sa-t" placeholder="Title (required)"><input id="sa-s" placeholder="Subtitle">
+    <input id="sa-u" placeholder="URL (optional)">
+    <textarea id="sa-d" rows="2" placeholder="Detail on hover"></textarea>
+    <div class="row2">
+      <select id="sa-c"></select>
+      <select id="sa-st"><option value="planned">Planned</option><option value="ongoing">Ongoing</option><option value="done">Completed</option></select>
+    </div>
+    <div class="pnl-btns"><button class="btn" data-action="addStar">Add</button><button class="btn" data-action="closeSap">Cancel</button></div>
+  </div>
+  <div id="hep" class="pnl">
+    <div class="pnl-h"><span>Edit starting point</span><button class="btn" data-action="closeHep">✕</button></div>
+    <input id="he-t" placeholder="Name / title">
+    <input id="he-l1" placeholder="Visible line 1">
+    <input id="he-l2" placeholder="Visible line 2">
+    <textarea id="he-d" rows="3" placeholder="Detail on hover"></textarea>
+    <div class="pnl-btns"><button class="btn" data-action="saveHep">Save</button><button class="btn" data-action="closeHep">Cancel</button></div>
+  </div>
+  <div id="tep" class="pnl">
+    <div class="pnl-h"><span>Edit time axis</span><button class="btn" data-action="closeTep">✕</button></div>
+    <input id="te-near" placeholder="Lower band label">
+    <input id="te-mid" placeholder="Middle band label">
+    <input id="te-far" placeholder="Upper band label">
+    <div class="pnl-btns"><button class="btn" data-action="saveTep">Save</button><button class="btn" data-action="closeTep">Cancel</button></div>
+  </div>
+  <div class="cvwrap">
+    <svg id="cvg" viewBox="0 0 900 580" preserveAspectRatio="xMidYMid meet"></svg>
+    <div id="tip"></div>
+    <div id="ctx"></div>
+  </div>
+  ${privacyModalMarkup}
+  ${fixedControlsMarkup}
+</div>`;
+
+      if (showResetBtn) {
+        const privacyModal = container.querySelector('#privacy-modal');
+        const privacyPanel = container.querySelector('#privacy-panel');
+        const PRIVACY_SEEN_KEY = 'career-board:privacy-seen';
+
+        const openPrivacy = () => { if (privacyModal) privacyModal.style.display = 'block'; };
+        const closePrivacy = () => {
+          if (privacyModal) privacyModal.style.display = 'none';
+          localStorage.setItem(PRIVACY_SEEN_KEY, '1');
+        };
+
+        container.querySelector('#privacy-link')?.addEventListener('click', (e) => {
+          e.preventDefault();
+          openPrivacy();
+        });
+        container.querySelector('#close-privacy-btn')?.addEventListener('click', closePrivacy);
+        privacyModal?.addEventListener('click', (event) => {
+          if (event.target === privacyModal) closePrivacy();
+        });
+        privacyPanel?.addEventListener('click', (event) => {
+          const target = event.target;
+
+          if (target instanceof HTMLElement && target.closest('button, a, input, textarea, select, label')) {
+            return;
+          }
+
+          closePrivacy();
+        });
+
+        container.querySelector('#reset-btn')?.addEventListener('click', () => {
+          if (confirm('Board zurücksetzen? Alle eigenen Änderungen gehen verloren.')) {
+            localStorage.removeItem(storageKey);
+            location.reload();
+          }
+        });
+
+        container.querySelector('#clear-btn')?.addEventListener('click', () => {
+          if (confirm('Board leeren? Es bleiben nur der Home-Planet und 2 leere Ziel-Planeten.')) {
+            const blankState = {
+              nodes: [
+                { node_key: 'target1', cat: 'destination', title: 'What I will be 1', subtitle: 'Dein erstes Ziel', detail: '', status: 'planned', x: 280, y: 75, color: '#378ADD', dark_color: '#040D1C', radius: 68 },
+                { node_key: 'target2', cat: 'destination', title: 'What I will be 2', subtitle: 'Dein zweites Ziel', detail: '', status: 'planned', x: 620, y: 75, color: '#1D9E75', dark_color: '#041510', radius: 68 },
+              ],
+              edges: [],
+              meta: { homeTitle: 'What I am …', homeLine1: 'What I am now', homeLine2: 'Who I am now', homeDetail: '', timelineNear: '3 months', timelineMid: '6 months', timelineFar: 'Future' },
+            };
+            localStorage.setItem(storageKey, JSON.stringify(blankState));
+            location.reload();
+          }
+        });
+
+        // Help modal — 4-step wizard
+        const helpModal = container.querySelector('#help-modal');
+        let helpStep = 1;
+        const HELP_STEPS = 4;
+
+        const goHelpStep = (n) => {
+          helpStep = Math.max(1, Math.min(HELP_STEPS, n));
+          for (let i = 1; i <= HELP_STEPS; i++) {
+            const s = container.querySelector(`#hs-${i}`);
+            if (s) s.style.display = i === helpStep ? 'block' : 'none';
+            const d = container.querySelector(`#hd-${i}`);
+            if (d) {
+              d.style.opacity = i === helpStep ? '1' : '0.3';
+              d.style.transform = i === helpStep ? 'scale(1.4)' : 'scale(1)';
+            }
+          }
+          const prevBtn = container.querySelector('#help-prev');
+          const nextBtn = container.querySelector('#help-next');
+          if (prevBtn) {
+            prevBtn.disabled = helpStep === 1;
+            prevBtn.style.opacity = helpStep === 1 ? '0.3' : '0.85';
+            prevBtn.style.cursor = helpStep === 1 ? 'default' : 'pointer';
+            prevBtn.style.color = helpStep === 1 ? 'rgba(255,255,255,0.38)' : 'rgba(255,255,255,0.75)';
+          }
+          if (nextBtn) nextBtn.textContent = helpStep === HELP_STEPS ? "Let's go ✓" : 'Next →';
+        };
+
+        const openHelp = () => {
+          if (!helpModal) return;
+          helpModal.style.display = 'block';
+          // Collapse detail section
+          const det = container.querySelector('#help-detail');
+          if (det) det.style.display = 'none';
+          const moreLink = container.querySelector('#help-more-link');
+          if (moreLink) moreLink.textContent = 'More about data & privacy ↓';
+          goHelpStep(1);
+        };
+        const closeHelp = () => { if (helpModal) helpModal.style.display = 'none'; };
+
+        container.querySelector('#help-btn')?.addEventListener('click', openHelp);
+        container.querySelector('#close-help-btn')?.addEventListener('click', closeHelp);
+        helpModal?.addEventListener('click', (e) => { if (e.target === helpModal) closeHelp(); });
+
+        container.querySelector('#help-prev')?.addEventListener('click', () => goHelpStep(helpStep - 1));
+        container.querySelector('#help-next')?.addEventListener('click', () => {
+          if (helpStep === HELP_STEPS) { closeHelp(); } else { goHelpStep(helpStep + 1); }
+        });
+
+        // Dot click
+        for (let i = 1; i <= HELP_STEPS; i++) {
+          container.querySelector(`#hd-${i}`)?.addEventListener('click', () => goHelpStep(i));
+        }
+
+        // "More about data & privacy" toggle
+        container.querySelector('#help-more-link')?.addEventListener('click', (e) => {
+          e.preventDefault();
+          const det = container.querySelector('#help-detail');
+          const link = container.querySelector('#help-more-link');
+          if (!det) return;
+          const open = det.style.display === 'block';
+          det.style.display = open ? 'none' : 'block';
+          if (link) link.textContent = open ? 'More about data & privacy ↓' : 'Hide details ↑';
+        });
+
+        // Auto-open on first visit
+        if (!localStorage.getItem(PRIVACY_SEEN_KEY)) {
+          openPrivacy();
+        }
+      }
+
+      const NS = 'http://www.w3.org/2000/svg';
+      const VW = 900;
+      const VH = 580;
+      let viewMinX = 0;
+      let viewMinY = 0;
+      let viewWidth = VW;
+      let viewHeight = VH;
+      const E = (tagName, attributes, parent) => {
+        const element = document.createElementNS(NS, tagName);
+        if (attributes) {
+          Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value));
+        }
+        if (parent) parent.appendChild(element);
+        return element;
+      };
+
+      const CATS = {
+        education: { c: '#B8C6FF', bg: 'rgba(95,123,214,0.34)', ring: 'rgba(184,198,255,0.72)', l: 'Education' },
+        job: { c: '#8FE0BC', bg: 'rgba(43,148,108,0.34)', ring: 'rgba(143,224,188,0.72)', l: 'Job' },
+        other: { c: '#FFB59E', bg: 'rgba(176,92,68,0.34)', ring: 'rgba(255,181,158,0.72)', l: 'Other' },
+      };
+      const STAT = {
+        planned: { c: '#9DA3B8', o: '0.84' },
+        ongoing: { c: '#7EA7D9', o: '0.92' },
+        done: { c: '#8DC9B4', o: '0.95' },
+      };
+      const normalizeCategory = (category) => {
+        if (category === 'marketing' || category === 'other') return 'other';
+        if (category === 'education' || category === 'cert') return 'education';
+        return 'job';
+      };
+      const normalizeStatus = (status) => {
+        if (status === 'done') return 'done';
+        if (status === 'active' || status === 'progress' || status === 'ongoing') return 'ongoing';
+        return 'planned';
+      };
+      const PC = [
+        { id: 'teal', c: '#1D9E75', k: '#041510' },
+        { id: 'blue', c: '#378ADD', k: '#040D1C' },
+        { id: 'purple', c: '#7F77DD', k: '#0A0620' },
+        { id: 'amber', c: '#EF9F27', k: '#150A00' },
+        { id: 'coral', c: '#F0997B', k: '#180800' },
+        { id: 'green', c: '#5DCAA5', k: '#021A10' },
+      ];
+      const pcm = Object.fromEntries(PC.map((palette) => [palette.id, palette]));
+      const pcRev = Object.fromEntries(PC.map((palette) => [palette.c, palette.id]));
+      const PLANET_STYLE = {
+        glow: 'rgba(109, 173, 228, 0.08)',
+        shell: '#16283D',
+        shellInner: 'rgba(120, 170, 220, 0.09)',
+        atmosphere: '#86b9eb37',
+        haze: 'rgba(109, 172, 228, 0.04)',
+      };
+
+      let planets = initialNodes
+        .filter((node) => node.cat === 'destination')
+        .map((node) => ({
+          id: node.node_key,
+          t1: node.title,
+          t2: node.subtitle || '',
+          detail: node.detail || '',
+          x: node.x,
+          y: node.y,
+          cid: node.color ? (pcRev[node.color] || 'teal') : 'teal',
+          r: node.radius || 68,
+        }));
+
+      let nodes = initialNodes
+        .filter((node) => node.cat !== 'destination')
+        .map((node) => ({
+          id: node.node_key,
+          cat: normalizeCategory(node.cat),
+          status: normalizeStatus(node.status),
+          title: node.title,
+          sub: node.subtitle || '',
+          url: node.url || '',
+          detail: node.detail || '',
+          x: node.x,
+          y: node.y,
+        }));
+
+      let edges = initialEdges.map((edge) => ({ f: edge.from_node, t: edge.to_node }));
+
+      const svg = container.querySelector('#cvg');
+      const tip = container.querySelector('#tip');
+      const ctx = container.querySelector('#ctx');
+      const HOME_ID = 'cur';
+      const HOME_POS = { x: 450, y: 552 };
+      const nmap = {};
+      const pmap = {};
+      const nels = {};
+      const pels = {};
+      const docks = {};
+      let homeGroup;
+      let egG;
+      let plG;
+      let sgG;
+      let dragId = null;
+      let dragType = null;
+      let dragOx = 0;
+      let dragOy = 0;
+      let hDrag = false;
+      const ds = { x: 0, y: 0 };
+      let mode = null;
+      let conn = null;
+      let editId = null;
+      let pepMode = null;
+      let pepId = null;
+      let cxId = null;
+      let cxT = null;
+      let apos = null;
+      let selClr = 'teal';
+      let ht = null;
+      let posSaveTimer = null;
+      const bgStars = [];
+      const starSprites = [];
+      const ambientStars = [];
+      const boardMeta = { ...DEFAULT_BOARD_META, ...(initialMeta || {}) };
+
+      const syncViewportMode = () => {
+        const fullscreenBoard = root.classList.contains('career-board-app--fullscreen');
+        const physicalScreenWidth = Math.max(window.screen?.width ?? 0, window.screen?.height ?? 0);
+        const physicalScreenHeight = Math.min(window.screen?.width ?? 0, window.screen?.height ?? 0);
+        const largeDesktopFullscreen = fullscreenBoard
+          && physicalScreenWidth >= 2800
+          && physicalScreenHeight >= 1700;
+
+        if (fullscreenBoard) {
+          const viewportAspect = window.innerWidth / Math.max(window.innerHeight, 1);
+          const clampedAspect = Math.min(Math.max(viewportAspect, 1.48), 2.1);
+
+          viewHeight = largeDesktopFullscreen ? 620 : VH;
+          viewWidth = Math.round(viewHeight * clampedAspect);
+          viewMinX = Math.round((VW - viewWidth) / 2);
+          viewMinY = largeDesktopFullscreen ? -14 : 0;
+        } else {
+          viewMinX = 0;
+          viewMinY = 0;
+          viewWidth = VW;
+          viewHeight = VH;
+        }
+
+        svg.setAttribute('viewBox', `${viewMinX} ${viewMinY} ${viewWidth} ${viewHeight}`);
+        svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      };
+
+      const boardToViewport = (pointX, pointY) => ({
+        x: ((pointX - viewMinX) / viewWidth),
+        y: ((pointY - viewMinY) / viewHeight),
+      });
+
+      const viewportToBoard = (clientX, clientY, rect) => ({
+        x: Math.max(0, Math.min(VW, viewMinX + ((clientX - rect.left) / rect.width) * viewWidth)),
+        y: Math.max(0, Math.min(VH, viewMinY + ((clientY - rect.top) / rect.height) * viewHeight)),
+      });
+
+      syncViewportMode();
+
+      const persistLocalState = () => {
+        if (!storageKey) return;
+
+        const serializedNodes = [
+          ...planets.map((planet) => {
+            const palette = pcm[planet.cid] || pcm.teal;
+            return {
+              node_key: planet.id,
+              cat: 'destination',
+              title: planet.t1,
+              subtitle: planet.t2,
+              detail: planet.detail,
+              status: 'planned',
+              x: planet.x,
+              y: planet.y,
+              color: palette.c,
+              dark_color: palette.k,
+              radius: planet.r,
+            };
+          }),
+          ...nodes.map((node) => ({
+            node_key: node.id,
+            cat: node.cat,
+            title: node.title,
+            subtitle: node.sub,
+            url: node.url,
+            detail: node.detail,
+            status: node.status,
+            x: node.x,
+            y: node.y,
+            color: null,
+            dark_color: null,
+            radius: null,
+          })),
+        ];
+
+        const serializedEdges = edges.map((edge) => ({
+          from_node: edge.f,
+          to_node: edge.t,
+        }));
+
+        window.localStorage.setItem(
+          storageKey,
+          JSON.stringify({ nodes: serializedNodes, edges: serializedEdges, meta: boardMeta, updatedAt: new Date().toISOString() })
+        );
+      };
+
+      const dbSavePosition = (nodeKey, x, y) => {
+        if (posSaveTimer) clearTimeout(posSaveTimer);
+
+        if (persistenceMode === 'local') {
+          posSaveTimer = setTimeout(() => {
+            persistLocalState();
+          }, 120);
+          return;
+        }
+
+        posSaveTimer = setTimeout(() => {
+          persistLocalState();
+          db('nodes')
+            .update({ x: Math.round(x), y: Math.round(y), updated_at: new Date().toISOString() })
+            .eq('node_key', nodeKey)
+            .eq('board_id', boardId);
+        }, 500);
+      };
+
+      const dbUpsertNode = (nodeKey, data) => {
+        persistLocalState();
+
+        if (persistenceMode === 'local') {
+          return;
+        }
+
+        db('nodes').upsert(
+          { ...data, node_key: nodeKey, board_id: boardId, user_id: userId, updated_at: new Date().toISOString() },
+          { onConflict: 'board_id,node_key' }
+        );
+      };
+
+      const dbInsertNode = (nodeKey, data) => {
+        persistLocalState();
+
+        if (persistenceMode === 'local') {
+          return;
+        }
+
+        db('nodes').insert({ ...data, node_key: nodeKey, board_id: boardId, user_id: userId });
+      };
+
+      const dbDeleteNode = (nodeKey) => {
+        persistLocalState();
+
+        if (persistenceMode === 'local') {
+          return;
+        }
+
+        db('edges')
+          .delete()
+          .eq('board_id', boardId)
+          .or(`from_node.eq.${nodeKey},to_node.eq.${nodeKey}`)
+          .then(() => {
+            db('nodes').delete().eq('node_key', nodeKey).eq('board_id', boardId);
+          });
+      };
+
+      const dbInsertEdge = (fromNode, toNode) => {
+        persistLocalState();
+
+        if (persistenceMode === 'local') {
+          return;
+        }
+
+        db('edges').insert({ board_id: boardId, user_id: userId, from_node: fromNode, to_node: toNode });
+      };
+
+      const dbDeleteEdge = (fromNode, toNode) => {
+        persistLocalState();
+
+        if (persistenceMode === 'local') {
+          return;
+        }
+
+        db('edges').delete().eq('board_id', boardId).eq('from_node', fromNode).eq('to_node', toNode);
+      };
+
+      container.querySelectorAll('#se-c, #sa-c').forEach((selectElement) => {
+        selectElement.innerHTML = '';
+        Object.entries(CATS).forEach(([key, value]) => {
+          const option = document.createElement('option');
+          option.value = key;
+          option.textContent = value.l;
+          selectElement.appendChild(option);
+        });
+      });
+
+      const getPM = (t1, t2) => {
+        let sl = [];
+        if (t2) {
+          const separatorIndex = t2.indexOf(' · ');
+          if (separatorIndex >= 0) sl = [t2.slice(0, separatorIndex), t2.slice(separatorIndex + 3)];
+          else if (t2.length > 20) {
+            const splitPoint = t2.lastIndexOf(' ', Math.floor(t2.length / 2));
+            sl = splitPoint > 0 ? [t2.slice(0, splitPoint), t2.slice(splitPoint + 1)] : [t2];
+          } else sl = [t2];
+        }
+        const tw = (t1 || '').length * 5.8 / 2;
+        const sw = sl.reduce((maxWidth, line) => Math.max(maxWidth, line.length * 4.8 / 2), 0);
+        const r = Math.round(Math.max(50, Math.min(90, Math.max(tw, sw) + 26)));
+        return { r, sl };
+      };
+
+      const normalizeNodeUrl = (rawValue) => {
+        const trimmedValue = rawValue.trim();
+        if (!trimmedValue) return '';
+
+        try {
+          return new URL(trimmedValue).toString();
+        } catch {
+          try {
+            return new URL(`https://${trimmedValue}`).toString();
+          } catch {
+            return '';
+          }
+        }
+      };
+
+      const renderClr = () => {
+        const cp = container.querySelector('#pe-c');
+        if (!cp) return;
+        cp.innerHTML = '';
+        PC.forEach((palette) => {
+          const button = document.createElement('div');
+          button.className = `clr${selClr === palette.id ? ' on' : ''}`;
+          button.style.background = palette.c;
+          button.addEventListener('click', () => {
+            selClr = palette.id;
+            renderClr();
+          });
+          cp.appendChild(button);
+        });
+      };
+      renderClr();
+
+      const gc = (id) => {
+        if (id === HOME_ID) return { x: HOME_POS.x, y: HOME_POS.y - 24 };
+        if (pmap[id]) return { x: pmap[id].x, y: pmap[id].y };
+        if (nmap[id]) return { x: nmap[id].x, y: nmap[id].y };
+        return null;
+      };
+
+      const defs = E('defs', {}, svg);
+      const homeGlow = E('radialGradient', { id: 'homeGlow', cx: '50%', cy: '18%', r: '82%' }, defs);
+      E('stop', { offset: '0%', 'stop-color': 'rgba(136,204,255,0.95)' }, homeGlow);
+      E('stop', { offset: '48%', 'stop-color': 'rgba(55,138,221,0.42)' }, homeGlow);
+      E('stop', { offset: '100%', 'stop-color': 'rgba(55,138,221,0)' }, homeGlow);
+      const homeShelf = E('linearGradient', { id: 'homeShelf', x1: '0%', y1: '0%', x2: '0%', y2: '100%' }, defs);
+      E('stop', { offset: '0%', 'stop-color': '#5CAEFF', 'stop-opacity': '0.62' }, homeShelf);
+      E('stop', { offset: '58%', 'stop-color': '#2377C9', 'stop-opacity': '0.28' }, homeShelf);
+      E('stop', { offset: '100%', 'stop-color': '#0A2440', 'stop-opacity': '0' }, homeShelf);
+      const flt = E('filter', { id: 'glow', x: '-80%', y: '-80%', width: '260%', height: '260%' }, defs);
+      E('feGaussianBlur', { in: 'SourceGraphic', stdDeviation: '2.8', result: 'b' }, flt);
+      const fm = E('feMerge', {}, flt);
+      E('feMergeNode', { in: 'b' }, fm);
+      E('feMergeNode', { in: 'SourceGraphic' }, fm);
+      const mk = E('marker', { id: 'arr', markerWidth: '6', markerHeight: '6', refX: '5.5', refY: '3', orient: 'auto' }, defs);
+      E('path', { d: 'M0,0 L0,6 L6,3Z', fill: 'rgba(255,255,255,0.18)' }, mk);
+      const mkc = E('marker', { id: 'arrc', markerWidth: '6', markerHeight: '6', refX: '5.5', refY: '3', orient: 'auto' }, defs);
+      E('path', { d: 'M0,0 L0,6 L6,3Z', fill: 'rgba(239,159,39,0.75)' }, mkc);
+      // Radial gradient backgrounds for milestone stars (center opaque → edge transparent)
+      [
+        { key: 'job',       c0: 'rgba(43,148,108,0.58)',  c1: 'rgba(43,148,108,0)' },
+        { key: 'education', c0: 'rgba(95,123,214,0.58)',  c1: 'rgba(95,123,214,0)' },
+        { key: 'other',     c0: 'rgba(176,92,68,0.58)',   c1: 'rgba(176,92,68,0)' },
+      ].forEach(({ key, c0, c1 }) => {
+        const g = E('radialGradient', { id: `sgrd-${key}`, cx: '0', cy: '0', r: '13', gradientUnits: 'userSpaceOnUse' }, defs);
+        E('stop', { offset: '0%', 'stop-color': c0 }, g);
+        E('stop', { offset: '100%', 'stop-color': c1 }, g);
+      });
+
+      const bg = E('g', {}, svg);
+      for (let i = 0; i < 90; i += 1) {
+        const star = E('circle', {
+          cx: (Math.random() * 900).toFixed(1),
+          cy: (Math.random() * 580).toFixed(1),
+          r: (Math.random() * 1 + 0.3).toFixed(2),
+          fill: 'white',
+          opacity: (Math.random() * 0.3 + 0.07).toFixed(2),
+        }, bg);
+        const twinkle = Math.random() < 0.07;
+        bgStars.push({
+          el: star,
+          baseOpacity: Math.random() * 0.22 + 0.08,
+          baseRadius: Number(star.getAttribute('r') || '0.5'),
+          twinkle,
+          speed: twinkle ? (Math.random() * 0.035 + 0.022) : 0,
+          phase: Math.random() * Math.PI * 2,
+        });
+      }
+
+      const pg = E('g', {}, svg);
+  // E('ellipse', { cx: '450', cy: '594', rx: '640', ry: '118', fill: 'url(#homeGlow)', opacity: '0.85' }, pg);
+  E('path', { d: 'M -80 582 Q 450 490 980 582 L 980 650 L -80 650 Z', fill: 'url(#homeShelf)', opacity: '0.94' }, pg);
+  // E('path', { d: 'M -58 520 Q 450 468 958 520', fill: 'none', stroke: 'rgba(165,216,255,0.34)', 'stroke-width': '1.7' }, pg);
+  E('path', { d: 'M -42 430 Q 450 404 942 430', fill: 'none', stroke: 'rgba(132,183,235,0.14)', 'stroke-width': '1.35' }, pg);
+      E('path', { d: 'M -30 302 Q 450 282 930 302', fill: 'none', stroke: 'rgba(132,183,235,0.12)', 'stroke-width': '1.15' }, pg);
+      const tlNear = E('text', { x: '56', y: '456', 'font-size': '10', fill: 'rgba(255,255,255,0.28)', cursor: 'pointer' }, pg);
+      const tlMid = E('text', { x: '56', y: '350', 'font-size': '10', fill: 'rgba(255,255,255,0.28)', cursor: 'pointer' }, pg);
+      const tlFar = E('text', { x: '56', y: '242', 'font-size': '10', fill: 'rgba(255,255,255,0.28)', cursor: 'pointer' }, pg);
+      const bt1 = E('text', { x: '450', y: '552', 'text-anchor': 'middle', 'font-size': '9.5', fill: 'rgba(255,255,255,0.48)' }, pg);
+      const bt2 = E('text', { x: '450', y: '567', 'text-anchor': 'middle', 'font-size': '9', fill: 'rgba(255,255,255,0.3)' }, pg);
+      const phr = E('rect', { x: '0', y: '500', width: '900', height: '80', fill: 'transparent' }, pg);
+
+  homeGroup = E('g', { id: 'hm-cur', class: 'hm', 'data-home-id': HOME_ID }, svg);
+  //  E('ellipse', { cx: String(HOME_POS.x), cy: String(HOME_POS.y - 14), rx: '108', ry: '34', fill: 'rgba(92,174,255,0.08)', opacity: '0.95' }, homeGroup);
+  E('rect', { x: '330', y: '500', width: '240', height: '92', fill: 'transparent' }, homeGroup);
+
+      const updateBaseLabels = () => {
+        tlNear.textContent = boardMeta.timelineNear;
+        tlMid.textContent = boardMeta.timelineMid;
+        tlFar.textContent = boardMeta.timelineFar;
+        bt1.textContent = boardMeta.homeLine1;
+        bt2.textContent = boardMeta.homeLine2;
+      };
+
+      updateBaseLabels();
+
+      egG = E('g', { id: 'eg' }, svg);
+      plG = E('g', { id: 'pl' }, svg);
+      sgG = E('g', { id: 'sg' }, svg);
+
+      const drawEdges = () => {
+        while (egG.lastChild) egG.removeChild(egG.lastChild);
+        const inC = mode === 'connecting';
+        edges.forEach((edge, idx) => {
+          const a = gc(edge.f);
+          const b = gc(edge.t);
+          if (!a || !b) return;
+          const isConnected = inC && (edge.f === conn || edge.t === conn);
+          // Arrow always points upward: ensure marker-end is at the higher node (lower y)
+          const [p0, p1] = a.y <= b.y ? [b, a] : [a, b];
+          E('path', {
+            d: `M${p0.x},${p0.y} C${p0.x},${p0.y + (p1.y - p0.y) * 0.42} ${p1.x},${p1.y - (p1.y - p0.y) * 0.42} ${p1.x},${p1.y}`,
+            fill: 'none',
+            stroke: isConnected ? 'rgba(239,159,39,0.55)' : 'rgba(255,255,255,0.09)',
+            'stroke-width': isConnected ? '2' : '1.2',
+            'marker-end': isConnected ? 'url(#arrc)' : 'url(#arr)',
+          }, egG);
+          if (isConnected && mode === 'connecting') {
+            const mx = (a.x + b.x) / 2;
+            const my = (a.y + b.y) / 2;
+            const btn = E('g', { cursor: 'pointer', class: 'del-edge' }, egG);
+            E('circle', { cx: String(mx), cy: String(my), r: '9', fill: 'rgba(215,55,45,0.9)' }, btn);
+            const xt = E('text', { x: String(mx), y: String(my + 4), 'text-anchor': 'middle', 'font-size': '11', 'font-weight': '500', fill: 'white', 'pointer-events': 'none' }, btn);
+            xt.textContent = '✕';
+            btn.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              const removed = edges.splice(idx, 1)[0];
+              if (removed) dbDeleteEdge(removed.f, removed.t);
+              drawEdges();
+            });
+          }
+        });
+      };
+
+      const DBG = 'rgba(16,22,40,0.9)';
+      const mkDock = (group, cx, cy, id, variant = 'node') => {
+        const dockGroup = E('g', {
+          id: `dk-${id}`,
+          opacity: '0',
+          cursor: 'pointer',
+          class: `dock-target dock-target--${variant}`,
+          'data-dock-id': id,
+        }, group);
+        E('circle', { cx: String(cx), cy: String(cy), r: '11', fill: 'rgba(14,28,54,0.96)', stroke: 'rgba(125,204,255,0.95)', 'stroke-width': '1.7' }, dockGroup);
+        E('circle', { cx: String(cx), cy: String(cy), r: '5.1', fill: '#7FD4FF', opacity: '0.98' }, dockGroup);
+        E('path', { d: `M${cx - 4},${cy} L${cx + 4},${cy} M${cx},${cy - 4} L${cx},${cy + 4}`, stroke: 'white', 'stroke-width': '1.1', 'stroke-linecap': 'round', opacity: '0.88' }, dockGroup);
+        dockGroup.addEventListener('mousedown', (event) => { event.stopPropagation(); event.preventDefault(); });
+        dockGroup.addEventListener('click', (event) => {
+          event.stopPropagation();
+          if (mode !== 'connecting' || id === conn) return;
+          completeConnection(id);
+        });
+        docks[id] = dockGroup;
+        return dockGroup;
+      };
+      const mkDots = (group, cx, cy, id, isPlanet) => {
+        const dotGroup = E('g', { id: `${isPlanet ? 'pd' : 'd'}-${id}`, opacity: '0', cursor: 'pointer' }, group);
+        E('circle', { cx: String(cx), cy: String(cy), r: '9', fill: DBG }, dotGroup);
+        [-3.5, 0, 3.5].forEach((dy) => {
+          E('circle', { cx: String(cx), cy: String(cy + dy), r: '1.3', fill: 'rgba(255,255,255,0.85)' }, dotGroup);
+        });
+        return dotGroup;
+      };
+      const mkPlus = (group, cx, cy, id, isPlanet) => {
+        const controlGroup = E('g', { id: `${isPlanet ? 'pa' : 'a'}-${id}`, opacity: '0', cursor: 'pointer', class: 'conn-ctrl', 'pointer-events': 'none' }, group);
+        E('circle', { cx: String(cx), cy: String(cy), r: '8.5', fill: '#1D9E75', opacity: '0.9' }, controlGroup);
+        const pt = E('text', { id: `${isPlanet ? 'pp' : 'p'}-${id}`, x: String(cx), y: String(cy + 4.5), 'text-anchor': 'middle', 'font-size': '13', 'font-weight': '500', fill: 'white' }, controlGroup);
+        pt.textContent = '+';
+        return controlGroup;
+      };
+      const aop = (opacity, exceptId) => {
+        nodes.forEach((node) => {
+          if (nels[node.id] && node.id !== exceptId) nels[node.id].setAttribute('opacity', String(opacity));
+        });
+        planets.forEach((planet) => {
+          if (pels[planet.id] && planet.id !== exceptId) pels[planet.id].setAttribute('opacity', String(opacity));
+        });
+        if (homeGroup && HOME_ID !== exceptId) homeGroup.setAttribute('opacity', String(opacity));
+      };
+      const showDockTargets = (isVisible, exceptId = null) => {
+        Object.entries(docks).forEach(([id, element]) => {
+          if (!(element instanceof SVGGElement)) return;
+          const isActive = isVisible && id !== exceptId;
+          element.setAttribute('opacity', isActive ? '1' : '0');
+          element.setAttribute('data-dock-active', isActive ? 'true' : 'false');
+        });
+      };
+      const completeConnection = (targetId) => {
+        if (!conn || targetId === conn) return;
+        if (!edges.some((edge) => edge.f === conn && edge.t === targetId)) {
+          edges.push({ f: conn, t: targetId });
+          dbInsertEdge(conn, targetId);
+        }
+        drawEdges();
+        uHint();
+      };
+
+      const makePlanetEl = (planet) => {
+        const metrics = getPM(planet.t1, planet.t2);
+        planet.r = metrics.r;
+        const group = E('g', { id: `pl-${planet.id}`, transform: `translate(${planet.x},${planet.y})`, 'data-pid': planet.id, class: 'pn' }, plG);
+        E('circle', { cx: '0', cy: '0', r: String(planet.r + 10), fill: PLANET_STYLE.glow, opacity: '1' }, group);
+        E('circle', { cx: '0', cy: '0', r: String(planet.r), fill: PLANET_STYLE.shell }, group);
+        E('circle', { cx: String(-planet.r * 0.08), cy: String(-planet.r * 0.1), r: String(planet.r * 0.94), fill: PLANET_STYLE.shellInner, opacity: '1' }, group);
+        E('circle', { cx: String(-planet.r * 0.34), cy: String(-planet.r * 0.34), r: String(planet.r * 0.34), fill: PLANET_STYLE.haze, opacity: '1' }, group);
+        E('circle', { cx: '0', cy: '0', r: String(planet.r), fill: 'none', stroke: PLANET_STYLE.atmosphere, 'stroke-width': '1.8', opacity: '0.88' }, group);
+        const lines = metrics.sl.length;
+        const titleY = lines === 0 ? 4 : lines === 1 ? -6 : -10;
+        const title = E('text', { x: '0', y: String(titleY), 'text-anchor': 'middle', 'font-size': '10.5', 'font-weight': '500', fill: 'rgba(255,255,255,0.92)' }, group);
+        title.textContent = planet.t1;
+        if (lines >= 1) {
+          const subtitle1 = E('text', { x: '0', y: String(lines === 1 ? 8 : 3), 'text-anchor': 'middle', 'font-size': '9', fill: 'rgba(255,255,255,0.48)' }, group);
+          subtitle1.textContent = metrics.sl[0];
+        }
+        if (lines >= 2) {
+          const subtitle2 = E('text', { x: '0', y: '15', 'text-anchor': 'middle', 'font-size': '9', fill: 'rgba(255,255,255,0.48)' }, group);
+          subtitle2.textContent = metrics.sl[1];
+        }
+        E('circle', { cx: '0', cy: '0', r: String(planet.r + 6), fill: 'none', stroke: PLANET_STYLE.atmosphere, 'stroke-width': '2.5', opacity: '0', id: `pr-${planet.id}` }, group);
+        const dc = Math.round(planet.r * 0.7);
+        const dotGroup = mkDots(group, dc, -dc, planet.id, true);
+        dotGroup.addEventListener('mousedown', (event) => { event.stopPropagation(); event.preventDefault(); });
+        dotGroup.addEventListener('click', (event) => { event.stopPropagation(); showPCtx(planet.id, event.clientX, event.clientY); });
+        mkPlus(group, 0, planet.r + 14, planet.id, true);
+        mkDock(group, 0, planet.r - 16, planet.id, 'planet');
+        group.addEventListener('mouseenter', () => {
+          if (!hDrag && !mode && planet.detail) {
+            sTip(PLANET_STYLE.atmosphere, 'Target planet', planet.t1, planet.detail, planet.x, planet.y - Math.round(planet.r / 2), null, planet.id);
+            document.getElementById(`pd-${planet.id}`)?.setAttribute('opacity', '1');
+          }
+        });
+        group.addEventListener('mouseleave', () => {
+          sHide();
+          document.getElementById(`pd-${planet.id}`)?.setAttribute('opacity', '0');
+        });
+        pmap[planet.id] = planet;
+        pels[planet.id] = group;
+      };
+
+      const sp = (r) => {
+        const inner = r * 0.33;
+        return `M0,${-r} L${inner},${-inner} L${r},0 L${inner},${inner} L0,${r} L${-inner},${inner} L${-r},0 L${-inner},${-inner}Z`;
+      };
+      const makeStarEl = (node) => {
+        const catKey = normalizeCategory(node.cat);
+        const cat = CATS[catKey] || CATS.job;
+        const status = STAT[normalizeStatus(node.status)] || STAT.planned;
+        const group = E('g', { id: `sn-${node.id}`, transform: `translate(${node.x},${node.y})`, 'data-id': node.id, class: 'sn' }, sgG);
+        const sprite = E('g', { class: 'sn-sprite' }, group);
+        // Gradient background (no ring border), ~30% smaller than before
+        const halo = E('circle', { cx: '0', cy: '0', r: '13', fill: `url(#sgrd-${catKey})`, opacity: '0.85' }, sprite);
+        const sparkle = E('circle', { cx: '0', cy: '0', r: '9', fill: status.c, filter: 'url(#glow)', opacity: '0.12' }, sprite);
+        const starShape = E('path', { d: sp(7), fill: status.c, filter: 'url(#glow)', opacity: status.o }, sprite);
+        E('circle', { cx: '0', cy: '0', r: '13', fill: 'none', stroke: cat.c, 'stroke-width': '2.5', opacity: '0', id: `r-${node.id}` }, sprite);
+          const title = E('text', { x: '14', y: '-4', 'font-size': '10', 'font-weight': '500', fill: 'rgba(255,255,255,0.9)' }, group);
+        title.textContent = node.title;
+          const subtitle = E('text', { x: '14', y: '9', 'font-size': '8', fill: 'rgba(255,255,255,0.4)' }, group);
+        subtitle.textContent = node.sub;
+        const dotGroup = mkDots(group, -13, -13, node.id, false);
+        dotGroup.addEventListener('mousedown', (event) => { event.stopPropagation(); event.preventDefault(); });
+        dotGroup.addEventListener('click', (event) => { event.stopPropagation(); showSCtx(node.id, event.clientX, event.clientY); });
+        mkPlus(group, 0, 17, node.id, false);
+        mkDock(group, 0, -17, node.id, 'star');
+        group.addEventListener('mouseenter', () => {
+          if (!hDrag && !mode) {
+            sTip(cat.c, cat.l, node.title, node.detail, node.x, node.y - 13, node.id, null);
+            document.getElementById(`d-${node.id}`)?.setAttribute('opacity', '1');
+          }
+        });
+        group.addEventListener('mouseleave', () => {
+          sHide();
+          document.getElementById(`d-${node.id}`)?.setAttribute('opacity', '0');
+        });
+        starSprites.push({
+          sprite,
+          halo,
+          sparkle,
+          starShape,
+          baseOpacity: Number(status.o),
+          scale: Math.random() * 0.003 + 0.0015,
+          speed: Math.random() * 0.001 + 0.00045,
+          phase: Math.random() * Math.PI * 2,
+        });
+        nmap[node.id] = node;
+        nels[node.id] = group;
+      };
+
+      planets.forEach(makePlanetEl);
+      nodes.forEach(makeStarEl);
+      mkPlus(homeGroup, HOME_POS.x, HOME_POS.y + 18, HOME_ID, false);
+      mkDock(homeGroup, HOME_POS.x, HOME_POS.y - 42, HOME_ID, 'home');
+      drawEdges();
+
+      // ── Ambient background star particles (public board only) ──────────
+      if (showResetBtn) {
+        const bgG = document.createElementNS(NS, 'g');
+        bgG.setAttribute('id', 'gg-bg');
+        svg.insertBefore(bgG, svg.firstChild);
+
+        const rng = () => Math.random();
+        const TOTAL = 260;
+
+        for (let i = 0; i < TOTAL; i++) {
+          const isGlimmer = rng() < 0.12;
+          const r   = isGlimmer ? (rng() * 0.55 + 0.85) : (rng() * 0.55 + 0.18);
+          const base = isGlimmer ? (rng() * 0.10 + 0.07) : (rng() * 0.06 + 0.02);
+          const c = document.createElementNS(NS, 'circle');
+          c.setAttribute('cx', (rng() * VW).toFixed(1));
+          c.setAttribute('cy', (rng() * VH).toFixed(1));
+          c.setAttribute('r',  r.toFixed(2));
+          c.setAttribute('fill', '#B8D4FF');
+          c.setAttribute('opacity', '0');
+          bgG.appendChild(c);
+          ambientStars.push({ el: c, base, speed: rng() * 0.005 + 0.001, phase: rng() * Math.PI * 2 });
+        }
+      }
+      // ────────────────────────────────────────────────────────────────────
+
+      let animFrame = 0;
+      const tickBoardStars = () => {
+        animFrame += 1;
+
+        for (const star of bgStars) {
+          if (!star.twinkle) {
+            star.el.setAttribute('opacity', star.baseOpacity.toFixed(4));
+            star.el.setAttribute('r', star.baseRadius.toFixed(3));
+            continue;
+          }
+
+          const flash = Math.max(0, Math.sin(animFrame * star.speed + star.phase));
+          const opacity = star.baseOpacity + flash * 0.12;
+          const radius = star.baseRadius * (1 + flash * 0.05);
+          star.el.setAttribute('opacity', opacity.toFixed(4));
+          star.el.setAttribute('r', radius.toFixed(3));
+        }
+
+        for (const star of ambientStars) {
+          const opacity = star.base * (0.35 + 0.65 * Math.sin(animFrame * star.speed + star.phase));
+          star.el.setAttribute('opacity', opacity.toFixed(4));
+        }
+
+        for (const star of starSprites) {
+          const wave = Math.sin(animFrame * star.speed + star.phase);
+          const shimmer = 0.5 + 0.5 * Math.sin(animFrame * (star.speed * 1.3) + star.phase * 1.2);
+          const scale = 1 + wave * star.scale;
+
+          star.sprite.setAttribute('transform', `scale(${scale.toFixed(4)})`);
+          star.starShape.setAttribute('opacity', (star.baseOpacity * (0.94 + shimmer * 0.08)).toFixed(4));
+          star.sparkle.setAttribute('opacity', (0.1 + shimmer * 0.08).toFixed(4));
+          star.halo.setAttribute('opacity', (0.26 + shimmer * 0.1).toFixed(4));
+        }
+
+        requestAnimationFrame(tickBoardStars);
+      };
+      tickBoardStars();
+
+      const enterConn = (id) => {
+        if (mode) exitConn(false);
+        conn = id;
+        mode = 'connecting';
+        const isPlanet = Boolean(pmap[id]);
+        document.getElementById(`${isPlanet ? 'pr' : 'r'}-${id}`)?.setAttribute('opacity', '0.9');
+        document.getElementById(`${isPlanet ? 'pr' : 'r'}-${id}`)?.setAttribute('stroke', '#EF9F27');
+        aop(1, id);
+        showDockTargets(true, id);
+        hTip(true);
+        drawEdges();
+        uHint();
+      };
+      const exitConn = (redraw = true) => {
+        if (conn) {
+          const isPlanet = Boolean(pmap[conn]);
+          const ring = document.getElementById(`${isPlanet ? 'pr' : 'r'}-${conn}`);
+          if (ring) {
+            ring.setAttribute('stroke', '#378ADD');
+            ring.setAttribute('opacity', '0');
+          }
+          aop(1);
+          showDockTargets(false);
+        }
+        conn = null;
+        mode = null;
+        hTip(true);
+        if (redraw) drawEdges();
+        uHint();
+      };
+      const uHint = () => {
+        const hint = container.querySelector('#hint');
+        if (!hint) return;
+        if (mode === 'connecting') hint.textContent = 'Click any blue dock to connect · click empty to exit';
+        else hint.textContent = 'Hover for info · drag to move · right-click for options';
+      };
+
+      const escHtml = (value) => {
+        const div = document.createElement('div');
+        div.textContent = value;
+        return div.innerHTML;
+      };
+      const sTip = (color, cls, title, detail, sx, sy, nid, pid) => {
+        if (mode) return;
+        if (ht) clearTimeout(ht);
+        const sr = svg.getBoundingClientRect();
+        const wr = container.querySelector('.cvwrap').getBoundingClientRect();
+        const viewportPoint = boardToViewport(sx, sy);
+        let px = viewportPoint.x * sr.width + (sr.left - wr.left) + 18;
+        let py = viewportPoint.y * sr.height + (sr.top - wr.top) - 8;
+        if (px + 308 > wr.width - 10) px -= 320;
+        if (py < 5) py = 5;
+        tip.style.cssText = `display:block;position:absolute;z-index:30;width:220px;border-radius:10px;padding:10px 12px;pointer-events:all;border:1px solid ${color}4D;background:rgba(6,10,22,0.97);left:${px}px;top:${py}px;`;
+        let pen = '';
+        if (nid === 'home') pen = '<span class="tip-e" data-action="etip" data-eid="home" data-etype="h">✎</span>';
+        else if (nid && nid.startsWith('timeline-')) pen = `<span class="tip-e" data-action="etip" data-eid="${nid}" data-etype="t">✎</span>`;
+        else if (nid) pen = `<span class="tip-e" data-action="etip" data-eid="${nid}" data-etype="s">✎</span>`;
+        else if (pid) pen = `<span class="tip-e" data-action="etip" data-eid="${pid}" data-etype="p">✎</span>`;
+        const safeDetail = detail ? detail.replace(/\n/g, '<br>') : '';
+        const rawUrl = nid && nmap[nid]?.url ? nmap[nid].url : '';
+        const safeUrl = rawUrl ? escHtml(rawUrl) : '';
+        const tipWidth = rawUrl ? 300 : 220;
+        tip.style.width = `${tipWidth}px`;
+        let domain = '';
+        try { domain = new URL(rawUrl).hostname.replace(/^www\./, ''); } catch {}
+        const faviconSrc = rawUrl ? `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(rawUrl)}&sz=64` : '';
+        tip.innerHTML = `<div style="position:relative;">${pen}<div style="font-size:8.5px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:${color};margin-bottom:4px;">${cls}</div><div style="font-size:12px;font-weight:500;color:rgba(255,255,255,0.95);margin-bottom:4px;">${escHtml(title)}</div>${safeDetail ? `<div style="font-size:10.5px;color:rgba(255,255,255,0.62);line-height:1.55;">${safeDetail}</div>` : ''}${rawUrl ? `<div class="tip-url-wrap" style="margin-top:10px;position:relative;width:100%;padding-top:56.25%;border-radius:7px;overflow:hidden;background:rgba(255,255,255,0.06);cursor:pointer;"><div class="tip-placeholder" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;"><img src="${faviconSrc}" style="width:22px;height:22px;border-radius:4px;display:block;" alt=""><span style="font-size:8.5px;color:rgba(255,255,255,0.4);letter-spacing:.02em;">${escHtml(domain)}</span><span style="font-size:7.5px;color:rgba(255,255,255,0.2);letter-spacing:.06em;">loading preview …</span></div><img class="tip-preview" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top left;display:block;opacity:0;transition:opacity .3s;" alt=""><span class="tip-open" style="display:none;position:absolute;bottom:0;left:0;right:0;padding:5px 8px;background:linear-gradient(0deg,rgba(0,0,0,0.6),transparent);font-size:8.5px;color:rgba(255,255,255,0.55);letter-spacing:.04em;border-radius:0 0 7px 7px;pointer-events:none;">click to open</span></div>` : ''}</div>`;
+        if (rawUrl) {
+          const previewImg = tip.querySelector('.tip-preview');
+          const urlWrap = tip.querySelector('.tip-url-wrap');
+          const placeholder = tip.querySelector('.tip-placeholder');
+          const openLabel = tip.querySelector('.tip-open');
+          if (previewImg && urlWrap) {
+            previewImg.src = `https://image.thum.io/get/width/600/viewportWidth/1280/crop/338/${rawUrl}`;
+            previewImg.onload = () => {
+              previewImg.style.opacity = '1';
+              if (placeholder) placeholder.remove();
+              if (openLabel) openLabel.style.display = 'block';
+            };
+            previewImg.onerror = () => {
+              previewImg.remove();
+              if (placeholder) {
+                placeholder.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:auto;';
+                const link = document.createElement('a');
+                link.href = safeUrl;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = 'WEBLINK';
+                link.style.cssText = 'color:#5BA7E8;font-weight:700;letter-spacing:.12em;font-size:10px;text-decoration:underline;';
+                link.onclick = (e) => e.stopPropagation();
+                placeholder.replaceChildren(link);
+              }
+            };
+            urlWrap.onclick = (e) => { e.stopPropagation(); window.open(rawUrl, '_blank', 'noopener,noreferrer'); };
+          }
+        }
+      };
+
+      function sHide() {
+        ht = setTimeout(() => {
+          tip.style.display = 'none';
+        }, 130);
+      }
+
+      const hTip = (instant = false) => {
+        if (instant) tip.style.display = 'none';
+        else sHide();
+      };
+      tip.addEventListener('mouseenter', () => {
+        if (ht) clearTimeout(ht);
+      });
+      tip.addEventListener('mouseleave', sHide);
+
+      const posCtx = (cx, cy) => {
+        const wr = container.querySelector('.cvwrap').getBoundingClientRect();
+        let mx = cx - wr.left;
+        let my = cy - wr.top;
+        if (mx + 172 > wr.width) mx -= 172;
+        if (my + 145 > wr.height) my -= 145;
+        if (mx < 4) mx = 4;
+        if (my < 4) my = 4;
+        ctx.style.left = `${mx}px`;
+        ctx.style.top = `${my}px`;
+        ctx.style.display = 'block';
+      };
+      const hCtx = () => { ctx.style.display = 'none'; };
+      const showHCtx = (cx, cy) => {
+        cxId = 'home';
+        cxT = 'h';
+        ctx.innerHTML = '<div class="ci" data-action="oHE">✎&nbsp;&nbsp;Edit starting point</div><div class="ci" data-action="oCC">⟶&nbsp;&nbsp;Edit connections</div>';
+        posCtx(cx, cy);
+        hTip(true);
+      };
+      const showSCtx = (id, cx, cy) => {
+        cxId = id;
+        cxT = 's';
+        ctx.innerHTML = '<div class="ci" data-action="oCT">✎&nbsp;&nbsp;Edit text</div><div class="ci" data-action="oCC">⟶&nbsp;&nbsp;Edit connections</div><div class="cs"></div><div class="ci" data-action="oDup">⎘&nbsp;&nbsp;Duplicate</div><div class="ci" style="color:#F0997B;" data-action="oDel">✕&nbsp;&nbsp;Delete</div>';
+        posCtx(cx, cy);
+        hTip(true);
+      };
+      const showPCtx = (id, cx, cy) => {
+        cxId = id;
+        cxT = 'p';
+        ctx.innerHTML = '<div class="ci" data-action="oCT">✎&nbsp;&nbsp;Edit planet</div><div class="ci" data-action="oCC">⟶&nbsp;&nbsp;Edit connections</div><div class="cs"></div><div class="ci" style="color:#F0997B;" data-action="oDel">✕&nbsp;&nbsp;Delete</div>';
+        posCtx(cx, cy);
+        hTip(true);
+      };
+      const showCCtx = (pos, cx, cy) => {
+        apos = pos;
+        ctx.innerHTML = '<div class="ci" data-action="doAS">✦&nbsp;&nbsp;Add star</div><div class="ci" data-action="doAT">◎&nbsp;&nbsp;Add target</div>';
+        posCtx(cx, cy);
+      };
+
+      phr.addEventListener('mouseenter', () => {
+        if (!mode) sTip('#378ADD', 'Starting point', boardMeta.homeTitle, boardMeta.homeDetail, 450, 495, 'home', null);
+      });
+      phr.addEventListener('mouseleave', sHide);
+      homeGroup.addEventListener('mouseenter', () => {
+        if (!hDrag && !mode) sTip('#378ADD', 'Starting point', boardMeta.homeTitle, boardMeta.homeDetail, 450, 495, 'home', null);
+      });
+      homeGroup.addEventListener('mouseleave', sHide);
+
+      tlNear.addEventListener('mouseenter', () => { if (!mode) sTip('#85B7EB', 'Time horizon', boardMeta.timelineNear, 'Edit this horizon label.', 112, 440, 'timeline-near', null); });
+      tlNear.addEventListener('mouseleave', sHide);
+      tlNear.addEventListener('click', (event) => { event.stopPropagation(); openTep('near'); });
+      tlMid.addEventListener('mouseenter', () => { if (!mode) sTip('#85B7EB', 'Time horizon', boardMeta.timelineMid, 'Edit this horizon label.', 112, 334, 'timeline-mid', null); });
+      tlMid.addEventListener('mouseleave', sHide);
+      tlMid.addEventListener('click', (event) => { event.stopPropagation(); openTep('mid'); });
+      tlFar.addEventListener('mouseenter', () => { if (!mode) sTip('#85B7EB', 'Time horizon', boardMeta.timelineFar, 'Edit this horizon label.', 112, 226, 'timeline-far', null); });
+      tlFar.addEventListener('mouseleave', sHide);
+      tlFar.addEventListener('click', (event) => { event.stopPropagation(); openTep('far'); });
+
+      const openPep = (id, nextMode) => {
+        pepMode = nextMode;
+        pepId = id;
+        const planet = id ? pmap[id] : null;
+        selClr = planet?.cid || 'teal';
+        container.querySelector('#pe-t').value = planet?.t1 || '';
+        container.querySelector('#pe-s').value = planet?.t2 || '';
+        container.querySelector('#pe-d').value = planet?.detail || '';
+        container.querySelector('#pep-h').textContent = nextMode === 'edit' ? 'Edit planet' : 'New target planet';
+        renderClr();
+        ['pep', 'sep', 'sap'].forEach((panelId) => {
+          const panel = container.querySelector(`#${panelId}`);
+          if (panel) panel.style.display = panelId === 'pep' ? 'block' : 'none';
+        });
+        container.querySelector('#pe-t').focus();
+      };
+      const openHep = () => {
+        container.querySelector('#he-t').value = boardMeta.homeTitle || '';
+        container.querySelector('#he-l1').value = boardMeta.homeLine1 || '';
+        container.querySelector('#he-l2').value = boardMeta.homeLine2 || '';
+        container.querySelector('#he-d').value = boardMeta.homeDetail || '';
+        ['pep', 'sep', 'sap', 'tep', 'hep'].forEach((panelId) => {
+          const panel = container.querySelector(`#${panelId}`);
+          if (panel) panel.style.display = panelId === 'hep' ? 'block' : 'none';
+        });
+        container.querySelector('#he-t').focus();
+      };
+      const saveHep = () => {
+        boardMeta.homeTitle = container.querySelector('#he-t').value.trim() || boardMeta.homeTitle;
+        boardMeta.homeLine1 = container.querySelector('#he-l1').value.trim() || boardMeta.homeLine1;
+        boardMeta.homeLine2 = container.querySelector('#he-l2').value.trim() || boardMeta.homeLine2;
+        boardMeta.homeDetail = container.querySelector('#he-d').value.trim() || boardMeta.homeDetail;
+        updateBaseLabels();
+        persistLocalState();
+        container.querySelector('#hep').style.display = 'none';
+      };
+      const closeHep = () => { container.querySelector('#hep').style.display = 'none'; };
+      const openTep = (slot = 'near') => {
+        container.querySelector('#te-near').value = boardMeta.timelineNear || '';
+        container.querySelector('#te-mid').value = boardMeta.timelineMid || '';
+        container.querySelector('#te-far').value = boardMeta.timelineFar || '';
+        ['pep', 'sep', 'sap', 'hep', 'tep'].forEach((panelId) => {
+          const panel = container.querySelector(`#${panelId}`);
+          if (panel) panel.style.display = panelId === 'tep' ? 'block' : 'none';
+        });
+        container.querySelector(`#te-${slot}`).focus();
+      };
+      const saveTep = () => {
+        boardMeta.timelineNear = container.querySelector('#te-near').value.trim() || boardMeta.timelineNear;
+        boardMeta.timelineMid = container.querySelector('#te-mid').value.trim() || boardMeta.timelineMid;
+        boardMeta.timelineFar = container.querySelector('#te-far').value.trim() || boardMeta.timelineFar;
+        updateBaseLabels();
+        persistLocalState();
+        container.querySelector('#tep').style.display = 'none';
+      };
+      const closeTep = () => { container.querySelector('#tep').style.display = 'none'; };
+      const savePep = () => {
+        const t1 = container.querySelector('#pe-t').value.trim();
+        if (!t1) return;
+        const t2 = container.querySelector('#pe-s').value.trim();
+        const det = container.querySelector('#pe-d').value.trim();
+        const palette = pcm[selClr] || pcm.teal;
+        if (pepMode === 'edit') {
+          const planet = pmap[pepId];
+          if (!planet) return;
+          planet.t1 = t1;
+          planet.t2 = t2;
+          planet.detail = det;
+          planet.cid = selClr;
+          document.getElementById(`pl-${planet.id}`)?.remove();
+          delete pels[planet.id];
+          makePlanetEl(planet);
+          drawEdges();
+          dbUpsertNode(planet.id, { cat: 'destination', title: t1, subtitle: t2, detail: det, x: planet.x, y: planet.y, color: palette.c, dark_color: palette.k, radius: planet.r });
+        } else {
+          const pos = apos || { x: 450, y: 110 };
+          const nk = `p${Date.now()}`;
+          const planet = { id: nk, t1, t2, detail: det, x: Math.min(pos.x, VW - 100), y: Math.min(pos.y, 170), cid: selClr, r: 68 };
+          planets.push(planet);
+          makePlanetEl(planet);
+          drawEdges();
+          apos = null;
+          dbInsertNode(nk, { cat: 'destination', title: t1, subtitle: t2, detail: det, status: 'planned', x: planet.x, y: planet.y, color: palette.c, dark_color: palette.k, radius: planet.r });
+        }
+        container.querySelector('#pep').style.display = 'none';
+      };
+      const closePep = () => { container.querySelector('#pep').style.display = 'none'; };
+
+      const openSep = (id) => {
+        const node = nmap[id];
+        if (!node) return;
+        editId = id;
+        container.querySelector('#se-t').value = node.title || '';
+        container.querySelector('#se-s').value = node.sub || '';
+        container.querySelector('#se-u').value = node.url || '';
+        container.querySelector('#se-d').value = node.detail || '';
+        container.querySelector('#se-c').value = node.cat || 'cert';
+        container.querySelector('#se-st').value = node.status || 'planned';
+        ['pep', 'sep', 'sap'].forEach((panelId) => {
+          const panel = container.querySelector(`#${panelId}`);
+          if (panel) panel.style.display = panelId === 'sep' ? 'block' : 'none';
+        });
+      };
+      const saveSep = () => {
+        const node = nmap[editId];
+        if (!node) return;
+        node.title = container.querySelector('#se-t').value.trim() || node.title;
+        node.sub = container.querySelector('#se-s').value.trim();
+        node.url = normalizeNodeUrl(container.querySelector('#se-u').value);
+        node.detail = container.querySelector('#se-d').value.trim();
+        node.cat = container.querySelector('#se-c').value;
+        node.status = container.querySelector('#se-st').value;
+        document.getElementById(`sn-${node.id}`)?.remove();
+        delete nels[node.id];
+        makeStarEl(node);
+        drawEdges();
+        container.querySelector('#sep').style.display = 'none';
+        dbUpsertNode(node.id, { cat: node.cat, title: node.title, subtitle: node.sub, url: node.url, detail: node.detail, status: node.status, x: node.x, y: node.y });
+      };
+      const closeSep = () => { container.querySelector('#sep').style.display = 'none'; };
+      const closeSap = () => {
+        container.querySelector('#sap').style.display = 'none';
+        apos = null;
+      };
+      const addStar = () => {
+        const title = container.querySelector('#sa-t').value.trim();
+        if (!title) return;
+        const cat = container.querySelector('#sa-c').value;
+        const status = container.querySelector('#sa-st').value;
+        const sub = container.querySelector('#sa-s').value.trim() || (CATS[cat]?.l || '');
+        const url = normalizeNodeUrl(container.querySelector('#sa-u').value);
+        const detail = container.querySelector('#sa-d').value.trim();
+        const pos = apos || { x: 400, y: 300 };
+        apos = null;
+        const nk = `u${Date.now()}`;
+        const node = { id: nk, cat, status, title, sub, url, detail, x: pos.x, y: pos.y };
+        nodes.push(node);
+        makeStarEl(node);
+        drawEdges();
+        ['sa-t', 'sa-s', 'sa-u', 'sa-d'].forEach((inputId) => {
+          const input = container.querySelector(`#${inputId}`);
+          if (input) input.value = '';
+        });
+        container.querySelector('#sap').style.display = 'none';
+        dbInsertNode(nk, { cat, title, subtitle: sub, url, detail, status, x: node.x, y: node.y });
+      };
+      const dupN = (id) => {
+        const source = nmap[id];
+        if (!source) return;
+        const nk = `u${Date.now()}`;
+        const node = { ...source, id: nk, x: source.x + 22, y: source.y + 22 };
+        nodes.push(node);
+        makeStarEl(node);
+        drawEdges();
+        dbInsertNode(nk, { cat: node.cat, title: node.title, subtitle: node.sub, url: node.url, detail: node.detail, status: node.status, x: node.x, y: node.y });
+      };
+      const delN = (id) => {
+        document.getElementById(`sn-${id}`)?.remove();
+        delete nmap[id];
+        delete nels[id];
+        edges = edges.filter((edge) => edge.f !== id && edge.t !== id);
+        if (conn === id) exitConn(false);
+        drawEdges();
+        hTip(true);
+        dbDeleteNode(id);
+      };
+      const delP = (id) => {
+        document.getElementById(`pl-${id}`)?.remove();
+        delete pmap[id];
+        delete pels[id];
+        planets = planets.filter((planet) => planet.id !== id);
+        edges = edges.filter((edge) => edge.f !== id && edge.t !== id);
+        if (conn === id) exitConn(false);
+        drawEdges();
+        hTip(true);
+        dbDeleteNode(id);
+      };
+
+      const actions = {
+        closePep,
+        savePep,
+        closeHep,
+        saveHep,
+        closeSep,
+        saveSep,
+        closeSap,
+        addStar,
+        closeTep,
+        saveTep,
+        oHE: () => { openHep(); hCtx(); },
+        oCT: () => { if (cxT === 'p') openPep(cxId, 'edit'); else openSep(cxId); hCtx(); },
+        oCC: () => { if (cxId) enterConn(cxId === 'home' ? HOME_ID : cxId); hCtx(); },
+        oDup: () => { if (cxId && cxT === 's') dupN(cxId); hCtx(); },
+        oDel: () => { if (cxT === 'p') delP(cxId); else delN(cxId); hCtx(); },
+        doAS: () => { hCtx(); container.querySelector('#sap').style.display = 'block'; },
+        doAT: () => { hCtx(); openPep(null, 'add'); },
+      };
+
+      const handleAction = (event) => {
+        const target = event.target.closest('[data-action]');
+        if (!target) return;
+        const action = target.getAttribute('data-action');
+        if (action === 'etip') {
+          const entityId = target.dataset.eid;
+          const entityType = target.dataset.etype;
+          if (entityType === 'p') openPep(entityId, 'edit');
+          else if (entityType === 'h') openHep();
+          else if (entityType === 't') openTep(entityId?.replace('timeline-', '') || 'near');
+          else openSep(entityId);
+          hTip(true);
+          return;
+        }
+        if (action && actions[action]) actions[action]();
+      };
+
+      container.addEventListener('click', handleAction);
+
+      const toSVG = (event) => {
+        const rect = svg.getBoundingClientRect();
+        return viewportToBoard(event.clientX, event.clientY, rect);
+      };
+
+      svg.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const star = event.target.closest('.sn');
+        const planet = event.target.closest('.pn');
+        const home = event.target.closest('.hm');
+        if (star) {
+          showSCtx(star.getAttribute('data-id'), event.clientX, event.clientY);
+          return;
+        }
+        if (planet) {
+          showPCtx(planet.getAttribute('data-pid'), event.clientX, event.clientY);
+          return;
+        }
+        if (home) {
+          showHCtx(event.clientX, event.clientY);
+          return;
+        }
+        if (event.target.closest('.del-edge') || event.target.closest('.conn-ctrl') || event.target.closest('.dock-target')) return;
+        showCCtx(toSVG(event), event.clientX, event.clientY);
+      });
+
+      svg.addEventListener('click', (event) => {
+        if (event.target.closest('.sn') || event.target.closest('.pn')) return;
+        if (event.target.closest('.hm')) return;
+        if (event.target.closest('.del-edge') || event.target.closest('.conn-ctrl') || event.target.closest('.dock-target')) return;
+        if (mode === 'connecting') exitConn();
+      });
+
+      const handleDocClick = (event) => {
+        if (!ctx.contains(event.target)) hCtx();
+      };
+      document.addEventListener('click', handleDocClick);
+      window.addEventListener('resize', syncViewportMode);
+
+      const handleMouseDown = (event) => {
+        if (event.target.closest('.conn-ctrl')) return;
+        const star = event.target.closest('.sn');
+        const planet = event.target.closest('.pn');
+        let id;
+        let type;
+        let entity;
+        if (star) {
+          id = star.getAttribute('data-id');
+          type = 's';
+          entity = nmap[id];
+        } else if (planet) {
+          id = planet.getAttribute('data-pid');
+          type = 'p';
+          entity = pmap[id];
+        }
+        if (!entity || !id || !type) return;
+        event.preventDefault();
+        dragId = id;
+        dragType = type;
+        hDrag = false;
+        const pos = toSVG(event);
+        ds.x = pos.x;
+        ds.y = pos.y;
+        dragOx = pos.x - entity.x;
+        dragOy = pos.y - entity.y;
+      };
+      const handleMouseMove = (event) => {
+        if (!dragId) return;
+        const pos = toSVG(event);
+        const dx = pos.x - ds.x;
+        const dy = pos.y - ds.y;
+        if (!hDrag && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+          hDrag = true;
+          hTip(true);
+        }
+        if (hDrag) {
+          const entity = dragType === 'p' ? pmap[dragId] : nmap[dragId];
+          if (!entity) return;
+          const minX = dragType === 'p' ? entity.r + 8 : 10;
+          const maxX = dragType === 'p' ? VW - entity.r - 8 : VW - 10;
+          const minY = dragType === 'p' ? entity.r + 8 : 10;
+          const maxY = dragType === 'p' ? VH - entity.r - 8 : VH - 18;
+          entity.x = Math.max(minX, Math.min(maxX, pos.x - dragOx));
+          entity.y = Math.max(minY, Math.min(maxY, pos.y - dragOy));
+          document.getElementById(`${dragType === 'p' ? 'pl' : 'sn'}-${dragId}`)?.setAttribute('transform', `translate(${entity.x},${entity.y})`);
+          drawEdges();
+        }
+      };
+      const handleMouseUp = () => {
+        if (!dragId) return;
+        const releasedId = dragId;
+        const releasedType = dragType;
+        if (hDrag && dragId) {
+          const entity = dragType === 'p' ? pmap[dragId] : nmap[dragId];
+          if (entity) dbSavePosition(dragId, entity.x, entity.y);
+        }
+        if (!hDrag && !mode && releasedType === 's') {
+          const node = nmap[releasedId];
+          if (node?.url) {
+            window.open(node.url, '_blank', 'noopener,noreferrer');
+          }
+        }
+        hDrag = false;
+        dragId = null;
+        dragType = null;
+      };
+
+      svg.addEventListener('mousedown', handleMouseDown);
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    };
+
+    openPublicBoard();
+  });
+</script>
