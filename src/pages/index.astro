@@ -16,17 +16,23 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_KEY ?? '';
   <ImpressumModal />
   <AuthModal />
 
-  <div id="mode-ui" style="position:fixed;top:14px;left:16px;z-index:80;"></div>
+  <div id="mode-ui"
+    data-sb-url={supabaseUrl}
+    data-sb-key={supabaseAnonKey}
+    style="position:fixed;top:14px;left:16px;z-index:80;"></div>
 
-  <script define:vars={{ supabaseUrl, supabaseAnonKey }}>
+  <script>
+    import { getBrowserSupabaseClient } from '../lib/supabase-browser';
+
     (async () => {
+      const ui = document.getElementById('mode-ui');
+      if (!ui) return;
+      const supabaseUrl  = ui.dataset.sbUrl  ?? '';
+      const supabaseAnonKey = ui.dataset.sbKey ?? '';
       if (!supabaseUrl || !supabaseAnonKey) return;
 
-      const { getBrowserSupabaseClient } = await import('../lib/supabase-browser');
-      const sb = getBrowserSupabaseClient(supabaseUrl, supabaseAnonKey);
-      const ui = document.getElementById('mode-ui');
+      const sb    = getBrowserSupabaseClient(supabaseUrl, supabaseAnonKey);
       const modal = document.getElementById('auth-modal');
-      if (!ui) return;
 
       const pill = 'border:none;padding:5px 12px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .15s;font-family:inherit;white-space:nowrap;';
       const wrap = 'background:rgba(6,10,22,0.82);border:1px solid rgba(255,255,255,0.12);border-radius:7px;overflow:hidden;backdrop-filter:blur(8px);display:flex;';
@@ -50,13 +56,13 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_KEY ?? '';
         sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.href } });
       });
 
-      const render = (user) => {
+      const render = (user: { user_metadata?: Record<string, string>; email?: string } | null) => {
         if (user) {
-          const name = user.user_metadata?.name || user.email?.split('@')[0] || 'Account';
+          const name = user.user_metadata?.['name'] || user.email?.split('@')[0] || 'Account';
           ui.innerHTML = `
             <div style="position:relative;">
               <div style="${wrap}">
-                <button id="btn-browser" style="${pill}background:transparent;color:rgba(255,255,255,0.3);" title="Switch to Browser Mode">Browser</button>
+                <button id="btn-browser" style="${pill}background:transparent;color:rgba(255,255,255,0.3);">Browser</button>
                 <button id="btn-login"   style="${pill}background:rgba(0,255,136,0.1);color:rgba(0,255,136,0.85);border-left:1px solid rgba(255,255,255,0.1);">☁ ${name}</button>
               </div>
               <div id="mode-tip" style="${tip}"></div>
