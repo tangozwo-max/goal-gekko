@@ -220,6 +220,7 @@ const { fullscreen = true } = Astro.props;
       container.innerHTML = `
 <div class="wrap">
   ${noticeMarkup}
+  <div id="sync-toast" style="position:fixed;bottom:20px;right:20px;z-index:60;background:rgba(6,10,22,0.9);border:1px solid rgba(0,255,136,0.25);border-radius:6px;padding:5px 11px;font-size:10px;color:rgba(0,255,136,0.75);letter-spacing:.04em;pointer-events:none;opacity:0;transition:opacity .35s;white-space:nowrap;"></div>
   <div class="bar" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
     <span id="hint" class="hint" style="display:block;">Hover for info · drag to move · right-click for options</span>
   </div>
@@ -609,6 +610,16 @@ const { fullscreen = true } = Astro.props;
         );
       };
 
+      let _toastTimer: ReturnType<typeof setTimeout> | null = null;
+      const showSyncToast = (msg: string) => {
+        const t = container.querySelector<HTMLElement>('#sync-toast');
+        if (!t) return;
+        t.textContent = msg;
+        t.style.opacity = '1';
+        if (_toastTimer) clearTimeout(_toastTimer);
+        _toastTimer = setTimeout(() => { t.style.opacity = '0'; }, 2200);
+      };
+
       const dbSavePosition = (nodeKey, x, y) => {
         if (posSaveTimer) clearTimeout(posSaveTimer);
 
@@ -624,7 +635,8 @@ const { fullscreen = true } = Astro.props;
           db('nodes')
             .update({ x: Math.round(x), y: Math.round(y), updated_at: new Date().toISOString() })
             .eq('node_key', nodeKey)
-            .eq('board_id', boardId);
+            .eq('board_id', boardId)
+            .then(() => showSyncToast('☁ Saved'));
         }, 500);
       };
 
@@ -638,7 +650,7 @@ const { fullscreen = true } = Astro.props;
         db('nodes').upsert(
           { ...data, node_key: nodeKey, board_id: boardId, user_id: userId, updated_at: new Date().toISOString() },
           { onConflict: 'board_id,node_key' }
-        );
+        ).then(() => showSyncToast('☁ Saved'));
       };
 
       const dbInsertNode = (nodeKey, data) => {
@@ -648,7 +660,8 @@ const { fullscreen = true } = Astro.props;
           return;
         }
 
-        db('nodes').insert({ ...data, node_key: nodeKey, board_id: boardId, user_id: userId });
+        db('nodes').insert({ ...data, node_key: nodeKey, board_id: boardId, user_id: userId })
+          .then(() => showSyncToast('☁ Saved'));
       };
 
       const dbDeleteNode = (nodeKey) => {
@@ -663,7 +676,8 @@ const { fullscreen = true } = Astro.props;
           .eq('board_id', boardId)
           .or(`from_node.eq.${nodeKey},to_node.eq.${nodeKey}`)
           .then(() => {
-            db('nodes').delete().eq('node_key', nodeKey).eq('board_id', boardId);
+            db('nodes').delete().eq('node_key', nodeKey).eq('board_id', boardId)
+              .then(() => showSyncToast('☁ Saved'));
           });
       };
 
@@ -674,7 +688,8 @@ const { fullscreen = true } = Astro.props;
           return;
         }
 
-        db('edges').insert({ board_id: boardId, user_id: userId, from_node: fromNode, to_node: toNode });
+        db('edges').insert({ board_id: boardId, user_id: userId, from_node: fromNode, to_node: toNode })
+          .then(() => showSyncToast('☁ Saved'));
       };
 
       const dbDeleteEdge = (fromNode, toNode) => {
@@ -684,7 +699,8 @@ const { fullscreen = true } = Astro.props;
           return;
         }
 
-        db('edges').delete().eq('board_id', boardId).eq('from_node', fromNode).eq('to_node', toNode);
+        db('edges').delete().eq('board_id', boardId).eq('from_node', fromNode).eq('to_node', toNode)
+          .then(() => showSyncToast('☁ Saved'));
       };
 
       container.querySelectorAll('#se-c, #sa-c').forEach((selectElement) => {
@@ -1593,16 +1609,6 @@ const { fullscreen = true } = Astro.props;
     const loadBoard = async (user: { id: string }) => {
       const localBoard = readLocalBoard(user.id);
 
-      if (localBoard.hasLocal) {
-        renderBoard({
-          container: mountEl, boardId: `cached-${user.id}`, userId: user.id,
-          initialNodes: localBoard.nodes, initialEdges: localBoard.edges, initialMeta: localBoard.meta,
-          db: null, persistenceMode: 'local', storageKey: getLocalStorageKey(user.id), showResetBtn: true,
-        });
-        showBoard();
-        return;
-      }
-
       if (!db) { openLocalBoard(user); return; }
 
       const { data: boards, error: boardsError } = await db('boards').select('id').eq('user_id', user.id).limit(1);
@@ -1631,6 +1637,8 @@ const { fullscreen = true } = Astro.props;
         db, persistenceMode: 'remote', storageKey: getLocalStorageKey(user.id), showResetBtn: true,
       });
       showBoard();
+      const _t = mountEl.querySelector<HTMLElement>('#sync-toast');
+      if (_t) { _t.textContent = '☁ Loaded from cloud'; _t.style.opacity = '1'; setTimeout(() => { _t.style.opacity = '0'; }, 2500); }
     };
 
     if (hasSupabase && supabase) {
