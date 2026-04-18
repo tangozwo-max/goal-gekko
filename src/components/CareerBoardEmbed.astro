@@ -1642,7 +1642,7 @@ const { fullscreen = true } = Astro.props;
         } else {
           openPublicBoard();
           supabase.auth.onAuthStateChange((event, s) => {
-            if (event === 'SIGNED_IN' && s?.user) location.reload();
+            if (event === 'SIGNED_IN' && s?.user) window.location.replace(location.pathname);
           });
         }
       } catch {

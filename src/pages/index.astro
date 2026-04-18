@@ -105,9 +105,8 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_KEY ?? '';
       const { data: { session } } = await sb.auth.getSession();
       render(session?.user ?? null);
 
-      sb.auth.onAuthStateChange((event, s) => {
+      sb.auth.onAuthStateChange((_event, s) => {
         render(s?.user ?? null);
-        if (event === 'SIGNED_IN') location.reload();
       });
     })();
   </script>
