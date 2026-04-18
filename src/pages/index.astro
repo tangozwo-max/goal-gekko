@@ -18,8 +18,6 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_KEY ?? '';
   <div id="auth-ui" style="position:fixed;top:14px;left:16px;z-index:80;"></div>
 
   <script define:vars={{ supabaseUrl, supabaseAnonKey }}>
-    import('/src/lib/supabase-browser.js').catch(() => null);
-
     (async () => {
       if (!supabaseUrl || !supabaseAnonKey) return;
 

@@ -92,7 +92,7 @@ const { fullscreen = true } = Astro.props;
     const openPublicBoard = () => {
       let nodes = CAREER_BOARD_PUBLIC_SEED_NODES.map((node) => ({ ...node }));
       let edges = CAREER_BOARD_PUBLIC_SEED_EDGES.map((edge) => ({ ...edge }));
-      let meta = { ...DEFAULT_PUBLIC_BOARD_META };
+      let meta = { ...DEFAULT_BOARD_META };
 
       try {
         const raw = window.localStorage.getItem(PUBLIC_STORAGE_KEY);
@@ -101,7 +101,7 @@ const { fullscreen = true } = Astro.props;
           if (Array.isArray(parsed?.nodes) && Array.isArray(parsed?.edges)) {
             nodes = parsed.nodes;
             edges = parsed.edges;
-            meta = { ...DEFAULT_PUBLIC_BOARD_META, ...(parsed?.meta || {}) };
+            meta = { ...DEFAULT_BOARD_META, ...(parsed?.meta || {}) };
           }
         }
       } catch {
