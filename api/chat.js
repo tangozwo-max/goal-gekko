@@ -135,7 +135,7 @@ export default async function handler(request) {
     },
     body: JSON.stringify({
       model,
-      max_tokens: 2048,
+      max_tokens: 1400,
       system: systemPrompt,
       messages,
       tools: TOOLS,
