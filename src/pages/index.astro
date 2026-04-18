@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import CareerBoardEmbed from '../components/CareerBoardEmbed.astro';
 import ImpressumModal from '../components/ImpressumModal.astro';
+import AuthModal from '../components/AuthModal.astro';
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_KEY ?? '';
@@ -13,9 +14,9 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_KEY ?? '';
 >
   <CareerBoardEmbed fullscreen={true} />
   <ImpressumModal />
+  <AuthModal />
 
-  <!-- Auth overlay: sign-in / signed-in indicator -->
-  <div id="auth-ui" style="position:fixed;top:14px;left:16px;z-index:80;"></div>
+  <div id="mode-ui" style="position:fixed;top:14px;left:16px;z-index:80;"></div>
 
   <script define:vars={{ supabaseUrl, supabaseAnonKey }}>
     (async () => {
@@ -23,24 +24,75 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_KEY ?? '';
 
       const { getBrowserSupabaseClient } = await import('../lib/supabase-browser');
       const sb = getBrowserSupabaseClient(supabaseUrl, supabaseAnonKey);
-      const ui = document.getElementById('auth-ui');
+      const ui = document.getElementById('mode-ui');
+      const modal = document.getElementById('auth-modal');
       if (!ui) return;
 
-      const btnStyle = 'background:rgba(6,10,22,0.82);border:1px solid rgba(255,255,255,0.12);border-radius:7px;padding:5px 12px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,0.52);cursor:pointer;transition:color .2s,border-color .2s;backdrop-filter:blur(8px);';
+      const pill = 'border:none;padding:5px 12px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .15s;font-family:inherit;white-space:nowrap;';
+      const wrap = 'background:rgba(6,10,22,0.82);border:1px solid rgba(255,255,255,0.12);border-radius:7px;overflow:hidden;backdrop-filter:blur(8px);display:flex;';
+      const tip  = 'position:absolute;top:calc(100% + 6px);left:0;min-width:200px;background:rgba(6,10,22,0.96);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:7px 11px;font-size:10px;color:rgba(255,255,255,0.55);line-height:1.45;pointer-events:none;z-index:100;display:none;';
+
+      const openModal = () => {
+        if (!modal) return;
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-hidden', 'false');
+      };
+      const closeModal = () => {
+        if (!modal) return;
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+      };
+
+      document.getElementById('auth-modal-close')?.addEventListener('click', closeModal);
+      modal?.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+      document.getElementById('auth-google-btn')?.addEventListener('click', () => {
+        sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.href } });
+      });
 
       const render = (user) => {
         if (user) {
           const name = user.user_metadata?.name || user.email?.split('@')[0] || 'Account';
-          ui.innerHTML = `<button id="auth-out" style="${btnStyle}">↩ ${name}</button>`;
-          document.getElementById('auth-out')?.addEventListener('click', async () => {
+          ui.innerHTML = `
+            <div style="position:relative;">
+              <div style="${wrap}">
+                <button id="btn-browser" style="${pill}background:transparent;color:rgba(255,255,255,0.3);" title="Switch to Browser Mode">Browser</button>
+                <button id="btn-login"   style="${pill}background:rgba(0,255,136,0.1);color:rgba(0,255,136,0.85);border-left:1px solid rgba(255,255,255,0.1);">☁ ${name}</button>
+              </div>
+              <div id="mode-tip" style="${tip}"></div>
+            </div>`;
+          const t = document.getElementById('mode-tip');
+          document.getElementById('btn-browser')?.addEventListener('mouseenter', () => {
+            if (t) { t.textContent = 'Sign out — board stays in this browser only'; t.style.display = 'block'; }
+          });
+          document.getElementById('btn-login')?.addEventListener('mouseenter', () => {
+            if (t) { t.textContent = 'Login Mode — board synced to cloud, accessible from any device'; t.style.display = 'block'; }
+          });
+          document.getElementById('btn-browser')?.addEventListener('mouseleave', () => { if (t) t.style.display = 'none'; });
+          document.getElementById('btn-login')?.addEventListener('mouseleave',  () => { if (t) t.style.display = 'none'; });
+          document.getElementById('btn-browser')?.addEventListener('click', async () => {
             await sb.auth.signOut();
             location.reload();
           });
         } else {
-          ui.innerHTML = `<button id="auth-in" style="${btnStyle}">Sign in with Google</button>`;
-          document.getElementById('auth-in')?.addEventListener('click', () => {
-            sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.href } });
+          ui.innerHTML = `
+            <div style="position:relative;">
+              <div style="${wrap}">
+                <button id="btn-browser" style="${pill}background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.65);">⊙ Browser</button>
+                <button id="btn-login"   style="${pill}background:transparent;color:rgba(255,255,255,0.3);border-left:1px solid rgba(255,255,255,0.08);">Login ↑</button>
+              </div>
+              <div id="mode-tip" style="${tip}"></div>
+            </div>`;
+          const t = document.getElementById('mode-tip');
+          document.getElementById('btn-browser')?.addEventListener('mouseenter', () => {
+            if (t) { t.innerHTML = '<strong style="color:rgba(255,255,255,0.8)">Browser Mode</strong><br>Board saved in this browser only.<br>Not portable across devices.'; t.style.display = 'block'; }
           });
+          document.getElementById('btn-login')?.addEventListener('mouseenter', () => {
+            if (t) { t.innerHTML = '<strong style="color:rgba(255,255,255,0.8)">Login Mode</strong><br>Board synced to cloud via Google.<br>Accessible from any device.'; t.style.display = 'block'; }
+          });
+          document.getElementById('btn-browser')?.addEventListener('mouseleave', () => { if (t) t.style.display = 'none'; });
+          document.getElementById('btn-login')?.addEventListener('mouseleave',  () => { if (t) t.style.display = 'none'; });
+          document.getElementById('btn-login')?.addEventListener('click', openModal);
         }
       };
 

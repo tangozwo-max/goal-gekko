@@ -208,10 +208,10 @@ const { fullscreen = true } = Astro.props;
     <p style="text-align:center;margin-top:14px;"><a id="help-more-link" href="#" style="font-size:9px;color:rgba(255,255,255,0.2);text-decoration:none;letter-spacing:.03em;transition:color .15s;" onmouseover="this.style.color='rgba(255,255,255,0.45)'" onmouseout="this.style.color='rgba(255,255,255,0.2)'">More about data &amp; privacy ↓</a></p>
     <div id="help-detail" style="display:none;margin-top:12px;padding:14px;border:1px solid rgba(255,255,255,0.07);border-radius:8px;background:rgba(255,255,255,0.02);">
       <div style="display:flex;flex-direction:column;gap:10px;font-size:10px;line-height:1.75;color:rgba(255,255,255,0.38);">
-        <p><strong style="color:rgba(255,255,255,0.55);">Your data</strong> — Everything stays in your browser (localStorage). No server, no account, no tracking. Use ⊘ to clear or ↺ to reload the example board.</p>
+        <p><strong style="color:rgba(255,255,255,0.55);">Your data</strong> — Browser Mode saves your board in localStorage (this device only). Login Mode (top-left) syncs your board to the cloud via Google. Use ⊘ to clear or ↺ to reload the example board.</p>
         <p><strong style="color:rgba(255,255,255,0.55);">Time bands</strong> — Three horizontal zones: 3 months, 6 months, Future. Place stars in the zone that matches your timeline. Click a band label to rename it.</p>
         <p><strong style="color:rgba(255,255,255,0.55);">Add stars</strong> — Right-click on any empty area of the board to add a new star at exactly that position.</p>
-        <p><strong style="color:rgba(255,255,255,0.55);">Contact</strong> — Alessandro Cancemi · ${atob('aW5mb0BjYW5jZW1pLmRl')} · <a href="/goal-gekko-datenschutz" style="color:rgba(92,174,255,0.65);text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Full privacy policy</a></p>
+        <p><strong style="color:rgba(255,255,255,0.55);">Contact</strong> — <a data-impressum-trigger href="#" style="color:rgba(92,174,255,0.65);text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Imprint</a> · <a href="/privacy" style="color:rgba(92,174,255,0.65);text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Privacy Policy</a></p>
       </div>
     </div>
   </div>

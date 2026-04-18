@@ -1,0 +1,66 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="Privacy Policy · Goal-Gekko"
+  description="Privacy policy for Goal-Gekko — how your career board data is stored and protected."
+>
+  <div style="min-height:100vh;padding:5rem 1.5rem 4rem;max-width:48rem;margin:0 auto;color:#E8E8E8;font-family:Inter,system-ui,sans-serif;line-height:1.75;">
+    <h1 style="font-size:2rem;font-weight:800;letter-spacing:-0.04em;margin-bottom:1.5rem;">Privacy Policy · Goal-Gekko</h1>
+
+    <div style="border:1px solid rgba(0,255,136,0.2);background:rgba(0,255,136,0.05);padding:1.25rem 1.5rem;border-radius:0.75rem;margin-bottom:2rem;">
+      <p style="font-weight:600;margin-bottom:0.5rem;">No tracking. No profiling. No hidden purposes.</p>
+      <p style="color:#888;">We process as little data as possible. What we collect serves only to operate the app — not for analytics, profiling, or advertising. No tracking pixels, no ad networks, no data resale.</p>
+    </div>
+
+    <section style="margin-bottom:2rem;">
+      <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:0.5rem;">1. Summary</h2>
+      <p style="color:#888;">Goal-Gekko offers two storage modes:</p>
+      <ul style="color:#888;padding-left:1.5rem;margin-top:0.5rem;">
+        <li><strong style="color:#ccc;">Browser Mode (default)</strong> — Your board data (nodes, edges, positions) is saved exclusively in your browser's localStorage. It never leaves your device.</li>
+        <li><strong style="color:#ccc;">Login Mode</strong> — When you sign in with Google, your board is stored in a cloud database (Supabase, hosted in the EU). This makes your board accessible from any device. You can sign out at any time to return to Browser Mode.</li>
+      </ul>
+    </section>
+
+    <section style="margin-bottom:2rem;">
+      <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:0.5rem;">2. Controller</h2>
+      <p style="color:#888;">
+        &#65;&#108;&#101;&#115;&#115;&#97;&#110;&#100;&#114;&#111;&#32;&#67;&#97;&#110;&#99;&#101;&#109;&#105;<br />
+        &#72;&#111;&#104;&#101;&#110;&#122;&#111;&#108;&#108;&#101;&#114;&#110;&#114;&#105;&#110;&#103;&#32;&#49;&#45;&#51;<br />
+        &#53;&#48;&#54;&#55;&#50;&#32;&#75;&#246;&#108;&#110;<br />
+        E-Mail: <a data-em="cmlvc2llcmFzdHVkaW9AZ21haWwuY29t" href="#" style="color:#00FF88;">&#114;&#105;&#111;&#115;&#105;&#101;&#114;&#97;&#115;&#116;&#117;&#100;&#105;&#111;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;</a>
+      </p>
+    </section>
+
+    <section style="margin-bottom:2rem;">
+      <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:0.5rem;">3. Browser Mode — localStorage</h2>
+      <p style="color:#888;">Goal-Gekko stores your board state in your browser's <strong>localStorage</strong> — this is not a cookie. Key: <code style="background:rgba(255,255,255,0.06);padding:1px 6px;border-radius:3px;font-size:0.85em;">career-board:local</code>. You can delete all stored data at any time using the <strong>⊘ button</strong> on the board. Legal basis: Art. 6 para. 1 lit. f GDPR.</p>
+    </section>
+
+    <section style="margin-bottom:2rem;">
+      <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:0.5rem;">4. Login Mode — Cloud Storage</h2>
+      <p style="color:#888;">If you sign in with Google, your board is stored in a Supabase PostgreSQL database. Data processed: Google account ID, e-mail address, display name, and your board content (nodes, edges, positions). Each user's data is strictly isolated via Row-Level Security — only you can access your own board. You can delete your data or sign out at any time. Legal basis: Art. 6 para. 1 lit. b GDPR (contractual performance) and Art. 6 para. 1 lit. a GDPR (consent via sign-in).</p>
+    </section>
+
+    <section style="margin-bottom:2rem;">
+      <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:0.5rem;">5. Google OAuth</h2>
+      <p style="color:#888;">Sign-in is handled via Google OAuth 2.0 through Supabase Auth. Google's own privacy policy applies to the authentication process. We receive only the profile data listed in section 4 above; we do not access your Google Contacts, Gmail, Calendar, or other Google services.</p>
+    </section>
+
+    <section style="margin-bottom:2rem;">
+      <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:0.5rem;">6. Hosting</h2>
+      <p style="color:#888;">Goal-Gekko is hosted on Vercel Inc. (440 N Barranca Ave #4133, Covina, CA 91723, USA). Vercel processes technical connection data on access. Cloud storage uses Supabase (EU region). Legal basis: Art. 6 para. 1 lit. f GDPR.</p>
+    </section>
+
+    <section style="margin-bottom:2rem;">
+      <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:0.5rem;">7. No Analytics, No Tracking</h2>
+      <p style="color:#888;">No analytics services are used. No user profiles, no behavioural data, no third-party trackers.</p>
+    </section>
+
+    <div style="padding-top:1.5rem;border-top:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;font-size:0.875rem;color:#888;">
+      <span>Last updated: April 2026</span>
+      <a href="/" style="color:#00FF88;text-decoration:none;">← Back to Goal-Gekko</a>
+    </div>
+  </div>
+</Layout>
