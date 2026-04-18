@@ -1,10 +1,15 @@
 ---
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
 const { fullscreen = true } = Astro.props;
 ---
 
 <section
   class:list={['career-board-app', fullscreen && 'career-board-app--fullscreen']}
   data-career-board-root
+  data-supabase-url={supabaseUrl}
+  data-supabase-anon-key={supabaseAnonKey}
+  data-supabase-db-schema="gekko"
 >
   <div class:list={['career-board-shell', fullscreen && 'career-board-shell--fullscreen']}>
     <div class="career-board-shell__state" data-career-board-state>
@@ -15,6 +20,7 @@ const { fullscreen = true } = Astro.props;
 </section>
 
 <script>
+  import { getBrowserSupabaseClient } from '../lib/supabase-browser';
   import { CAREER_BOARD_PUBLIC_SEED_NODES, CAREER_BOARD_PUBLIC_SEED_EDGES } from '../lib/career-board-seed';
 
   const DEFAULT_BOARD_META = {
@@ -29,19 +35,56 @@ const { fullscreen = true } = Astro.props;
 
   const boardRoots = document.querySelectorAll('[data-career-board-root]');
 
-  boardRoots.forEach((root) => {
+  boardRoots.forEach(async (root) => {
     if (!(root instanceof HTMLElement)) return;
 
+    const supabaseUrl = root.dataset.supabaseUrl ?? '';
+    const supabaseAnonKey = root.dataset.supabaseAnonKey ?? '';
+    const supabaseDbSchema = root.dataset.supabaseDbSchema ?? 'gekko';
     const stateEl = root.querySelector('[data-career-board-state]');
     const mountEl = root.querySelector('[data-career-board-mount]');
 
     if (!(stateEl instanceof HTMLElement) || !(mountEl instanceof HTMLElement)) return;
 
-    const db = null;
+    const hasSupabase = Boolean(supabaseUrl && supabaseAnonKey);
+    const supabase = hasSupabase ? getBrowserSupabaseClient(supabaseUrl, supabaseAnonKey) : null;
+    const db = (hasSupabase && supabase) ? (t: string) => supabase.schema(supabaseDbSchema).from(t) : null;
+
+    const setState = (msg: string, isError = false) => {
+      stateEl.textContent = msg;
+      stateEl.classList.toggle('career-board-shell__state--error', isError);
+    };
 
     const showBoard = () => {
       stateEl.classList.add('hidden');
       mountEl.classList.remove('hidden');
+    };
+
+    const getLocalStorageKey = (userId: string) => `career-board:${userId}`;
+
+    const readLocalBoard = (userId: string) => {
+      const fallbackNodes = CAREER_BOARD_PUBLIC_SEED_NODES.map(n => ({...n}));
+      const fallbackEdges = CAREER_BOARD_PUBLIC_SEED_EDGES.map(e => ({...e}));
+      try {
+        const raw = localStorage.getItem(getLocalStorageKey(userId));
+        if (!raw) return { hasLocal: false, nodes: fallbackNodes, edges: fallbackEdges, meta: {...DEFAULT_BOARD_META} };
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed?.nodes) || !Array.isArray(parsed?.edges))
+          return { hasLocal: false, nodes: fallbackNodes, edges: fallbackEdges, meta: {...DEFAULT_BOARD_META} };
+        return { hasLocal: true, nodes: parsed.nodes, edges: parsed.edges, meta: {...DEFAULT_BOARD_META, ...(parsed?.meta ?? {})} };
+      } catch {
+        return { hasLocal: false, nodes: fallbackNodes, edges: fallbackEdges, meta: {...DEFAULT_BOARD_META} };
+      }
+    };
+
+    const openLocalBoard = (user: { id: string }, notice?: string) => {
+      const localBoard = readLocalBoard(user.id);
+      renderBoard({
+        container: mountEl, boardId: `local-${user.id}`, userId: user.id,
+        initialNodes: localBoard.nodes, initialEdges: localBoard.edges, initialMeta: localBoard.meta,
+        db: null, persistenceMode: 'local', storageKey: getLocalStorageKey(user.id), notice, showResetBtn: true,
+      });
+      showBoard();
     };
 
     const PUBLIC_STORAGE_KEY = 'career-board:local';
@@ -1547,6 +1590,66 @@ const { fullscreen = true } = Astro.props;
       document.addEventListener('mouseup', handleMouseUp);
     };
 
-    openPublicBoard();
+    const loadBoard = async (user: { id: string }) => {
+      const localBoard = readLocalBoard(user.id);
+
+      if (localBoard.hasLocal) {
+        renderBoard({
+          container: mountEl, boardId: `cached-${user.id}`, userId: user.id,
+          initialNodes: localBoard.nodes, initialEdges: localBoard.edges, initialMeta: localBoard.meta,
+          db: null, persistenceMode: 'local', storageKey: getLocalStorageKey(user.id), showResetBtn: true,
+        });
+        showBoard();
+        return;
+      }
+
+      if (!db) { openLocalBoard(user); return; }
+
+      const { data: boards, error: boardsError } = await db('boards').select('id').eq('user_id', user.id).limit(1);
+      if (boardsError) { openLocalBoard(user, 'Cloud sync unavailable. Changes stay in this browser only.'); return; }
+
+      let boardId = boards?.[0]?.id;
+
+      if (!boardId) {
+        const { data: newBoard, error } = await db('boards')
+          .insert({ user_id: user.id, title: 'Career Strategy Board' })
+          .select('id').single();
+        if (error || !newBoard) { openLocalBoard(user, 'Cloud board creation failed.'); return; }
+        boardId = newBoard.id;
+        await db('nodes').insert(CAREER_BOARD_PUBLIC_SEED_NODES.map(n => ({...n, board_id: boardId, user_id: user.id})));
+        await db('edges').insert(CAREER_BOARD_PUBLIC_SEED_EDGES.map(e => ({...e, board_id: boardId, user_id: user.id})));
+      }
+
+      const [{ data: dbNodes }, { data: dbEdges }] = await Promise.all([
+        db('nodes').select('*').eq('board_id', boardId),
+        db('edges').select('*').eq('board_id', boardId),
+      ]);
+
+      renderBoard({
+        container: mountEl, boardId, userId: user.id,
+        initialNodes: dbNodes || [], initialEdges: dbEdges || [], initialMeta: localBoard.meta,
+        db, persistenceMode: 'remote', storageKey: getLocalStorageKey(user.id), showResetBtn: true,
+      });
+      showBoard();
+    };
+
+    if (hasSupabase && supabase) {
+      setState('Loading…');
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          await loadBoard(session.user);
+        } else {
+          openPublicBoard();
+          supabase.auth.onAuthStateChange((event, s) => {
+            if (event === 'SIGNED_IN' && s?.user) location.reload();
+          });
+        }
+      } catch {
+        openPublicBoard();
+      }
+    } else {
+      openPublicBoard();
+    }
   });
 </script>

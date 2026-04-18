@@ -2,6 +2,9 @@
 import Layout from '../layouts/Layout.astro';
 import CareerBoardEmbed from '../components/CareerBoardEmbed.astro';
 import ImpressumModal from '../components/ImpressumModal.astro';
+
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
 ---
 
 <Layout
@@ -10,4 +13,46 @@ import ImpressumModal from '../components/ImpressumModal.astro';
 >
   <CareerBoardEmbed fullscreen={true} />
   <ImpressumModal />
+
+  <!-- Auth overlay: sign-in / signed-in indicator -->
+  <div id="auth-ui" style="position:fixed;top:14px;left:16px;z-index:80;"></div>
+
+  <script define:vars={{ supabaseUrl, supabaseAnonKey }}>
+    import('/src/lib/supabase-browser.js').catch(() => null);
+
+    (async () => {
+      if (!supabaseUrl || !supabaseAnonKey) return;
+
+      const { getBrowserSupabaseClient } = await import('../lib/supabase-browser');
+      const sb = getBrowserSupabaseClient(supabaseUrl, supabaseAnonKey);
+      const ui = document.getElementById('auth-ui');
+      if (!ui) return;
+
+      const btnStyle = 'background:rgba(6,10,22,0.82);border:1px solid rgba(255,255,255,0.12);border-radius:7px;padding:5px 12px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,0.52);cursor:pointer;transition:color .2s,border-color .2s;backdrop-filter:blur(8px);';
+
+      const render = (user) => {
+        if (user) {
+          const name = user.user_metadata?.name || user.email?.split('@')[0] || 'Account';
+          ui.innerHTML = `<button id="auth-out" style="${btnStyle}">↩ ${name}</button>`;
+          document.getElementById('auth-out')?.addEventListener('click', async () => {
+            await sb.auth.signOut();
+            location.reload();
+          });
+        } else {
+          ui.innerHTML = `<button id="auth-in" style="${btnStyle}">Sign in with Google</button>`;
+          document.getElementById('auth-in')?.addEventListener('click', () => {
+            sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.href } });
+          });
+        }
+      };
+
+      const { data: { session } } = await sb.auth.getSession();
+      render(session?.user ?? null);
+
+      sb.auth.onAuthStateChange((event, s) => {
+        render(s?.user ?? null);
+        if (event === 'SIGNED_IN') location.reload();
+      });
+    })();
+  </script>
 </Layout>
