@@ -133,7 +133,7 @@ export default async function handler(request) {
     },
     body: JSON.stringify({
       model,
-      max_tokens: 1024,
+      max_tokens: 2048,
       system: systemPrompt,
       messages,
       tools: TOOLS,
@@ -155,5 +155,7 @@ export default async function handler(request) {
     proposals,
     usage: data.usage,
     stopReason: data.stop_reason,
+    // Full content blocks (including tool_use with ids) for proper conversation history
+    rawContent: data.content || [],
   }), { headers: { 'Content-Type': 'application/json' } });
 }

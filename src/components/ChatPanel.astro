@@ -1,17 +1,17 @@
 <!-- Gecko AI Chat Panel -->
 <button id="gekko-toggle" title="Chat with Gecko" aria-label="Open Gecko career consultant">
-  <img src="/images/goal_gekko.gif" alt="" width="28" height="28" style="border-radius:50%;object-fit:contain;">
+  <img src="/images/goal_gekko.gif" alt="" width="26" height="26" style="border-radius:50%;object-fit:contain;">
 </button>
 
 <div id="gekko-panel" role="complementary" aria-label="Gecko career consultant">
-  <div id="gekko-hdr">
-    <div style="display:flex;align-items:center;gap:8px;">
-      <img src="/images/goal_gekko.gif" alt="Gecko" width="22" height="22" style="border-radius:50%;object-fit:contain;">
-      <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.85);letter-spacing:.03em;">Gecko</span>
-      <span style="font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:.08em;text-transform:uppercase;">Career Strategy</span>
+  <div id="gekko-hdr" title="Drag to move">
+    <div style="display:flex;align-items:center;gap:7px;">
+      <img src="/images/goal_gekko.gif" alt="Gecko" width="18" height="18" style="border-radius:50%;object-fit:contain;flex-shrink:0;">
+      <span style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.85);letter-spacing:.03em;">Gecko</span>
+      <span style="font-size:7.5px;color:rgba(255,255,255,0.3);letter-spacing:.08em;text-transform:uppercase;">Career Strategy</span>
     </div>
     <div style="display:flex;align-items:center;gap:4px;">
-      <div id="gekko-tier-wrap" style="display:flex;border:1px solid rgba(255,255,255,0.1);border-radius:6px;overflow:hidden;">
+      <div id="gekko-tier-wrap" style="display:flex;border:1px solid rgba(255,255,255,0.1);border-radius:5px;overflow:hidden;">
         <button class="tier-btn" data-tier="fast" title="Fast · Haiku">⚡</button>
         <button class="tier-btn active" data-tier="balanced" title="Balanced · Sonnet">⚡⚡</button>
         <button class="tier-btn" data-tier="deep" title="Deep · Opus">⚡⚡⚡</button>
@@ -23,7 +23,7 @@
   <div id="gekko-msgs"></div>
 
   <div id="gekko-input-wrap">
-    <textarea id="gekko-input" placeholder="Ask about your career strategy…" rows="2"></textarea>
+    <textarea id="gekko-input" placeholder="Ask Gecko about your career…" rows="2"></textarea>
     <button id="gekko-send" title="Send (Enter)">↑</button>
   </div>
 </div>
@@ -34,182 +34,210 @@
     bottom: 66px;
     right: 20px;
     z-index: 85;
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     border: 1px solid rgba(0,255,136,0.3);
-    background: rgba(6,10,22,0.9);
+    background: rgba(6,10,22,0.92);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(8px);
-    transition: border-color .2s, transform .2s;
+    transition: border-color .2s, transform .2s, box-shadow .2s;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
   }
-  #gekko-toggle:hover { border-color: rgba(0,255,136,0.7); transform: scale(1.06); }
+  #gekko-toggle:hover {
+    border-color: rgba(0,255,136,0.65);
+    transform: scale(1.07);
+    box-shadow: 0 2px 16px rgba(0,255,136,0.15);
+  }
 
   #gekko-panel {
     position: fixed;
-    top: 0;
-    right: -400px;
-    width: 360px;
-    height: 100%;
-    z-index: 88;
-    background: rgba(5,8,20,0.97);
-    border-left: 1px solid rgba(255,255,255,0.08);
-    display: flex;
+    top: 58px;
+    right: 24px;
+    width: 340px;
+    height: 500px;
+    min-width: 240px;
+    min-height: 260px;
+    max-width: 640px;
+    max-height: 88vh;
+    z-index: 90;
+    background: rgba(4,7,18,0.96);
+    border: 1px solid rgba(255,255,255,0.13);
+    border-radius: 10px;
+    display: none;
     flex-direction: column;
-    transition: right .28s cubic-bezier(.4,0,.2,1);
-    backdrop-filter: blur(12px);
+    resize: both;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04), 0 0 24px rgba(0,255,136,0.05);
     font-family: Inter, system-ui, sans-serif;
+    user-select: none;
   }
-  #gekko-panel.open { right: 0; }
+  #gekko-panel.open { display: flex; }
 
   #gekko-hdr {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 14px;
+    padding: 9px 11px;
     border-bottom: 1px solid rgba(255,255,255,0.07);
     flex-shrink: 0;
+    cursor: grab;
+    background: rgba(255,255,255,0.02);
   }
+  #gekko-hdr:active { cursor: grabbing; }
 
   .tier-btn {
     background: transparent;
     border: none;
-    color: rgba(255,255,255,0.35);
-    font-size: 10px;
-    padding: 4px 7px;
+    color: rgba(255,255,255,0.3);
+    font-size: 8px;
+    padding: 3px 6px;
     cursor: pointer;
     transition: background .15s, color .15s;
-    letter-spacing: .02em;
   }
-  .tier-btn:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7); }
+  .tier-btn:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.65); }
   .tier-btn.active { background: rgba(0,255,136,0.1); color: rgba(0,255,136,0.85); }
 
   #gekko-close {
     background: none;
     border: none;
-    color: rgba(255,255,255,0.3);
-    font-size: 14px;
+    color: rgba(255,255,255,0.28);
+    font-size: 12px;
     cursor: pointer;
-    padding: 4px 6px;
+    padding: 3px 5px;
     border-radius: 4px;
     transition: color .15s;
-    margin-left: 4px;
+    margin-left: 3px;
+    line-height: 1;
   }
-  #gekko-close:hover { color: rgba(255,255,255,0.8); }
+  #gekko-close:hover { color: rgba(255,255,255,0.75); }
 
   #gekko-msgs {
     flex: 1;
     overflow-y: auto;
-    padding: 14px 14px 6px;
+    padding: 11px 11px 5px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 9px;
     scroll-behavior: smooth;
+    min-height: 0;
+    user-select: text;
   }
-  #gekko-msgs::-webkit-scrollbar { width: 4px; }
+  #gekko-msgs::-webkit-scrollbar { width: 3px; }
   #gekko-msgs::-webkit-scrollbar-track { background: transparent; }
-  #gekko-msgs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+  #gekko-msgs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
 
+  /* User bubble — blue tint */
   .msg-user {
     align-self: flex-end;
-    background: rgba(0,255,136,0.1);
-    border: 1px solid rgba(0,255,136,0.2);
-    border-radius: 10px 10px 2px 10px;
-    padding: 8px 11px;
-    font-size: 12px;
-    color: rgba(255,255,255,0.85);
-    max-width: 85%;
+    background: rgba(55,138,221,0.14);
+    border: 1px solid rgba(55,138,221,0.28);
+    border-radius: 8px 8px 2px 8px;
+    padding: 6px 9px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.82);
+    max-width: 86%;
     line-height: 1.55;
     white-space: pre-wrap;
     word-break: break-word;
   }
 
+  /* AI bubble — teal/green tint */
   .msg-ai {
     align-self: flex-start;
-    max-width: 90%;
+    max-width: 92%;
   }
   .msg-ai-bubble {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 2px 10px 10px 10px;
-    padding: 8px 11px;
-    font-size: 12px;
+    background: rgba(29,158,117,0.08);
+    border: 1px solid rgba(29,158,117,0.2);
+    border-radius: 2px 8px 8px 8px;
+    padding: 6px 9px;
+    font-size: 10px;
     color: rgba(255,255,255,0.78);
     line-height: 1.65;
     white-space: pre-wrap;
     word-break: break-word;
   }
 
+  .msg-cost {
+    margin-top: 3px;
+    font-size: 7.5px;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: .04em;
+    padding-left: 2px;
+  }
+
   .msg-loading {
     align-self: flex-start;
-    font-size: 11px;
-    color: rgba(255,255,255,0.3);
-    padding: 6px 4px;
+    font-size: 9px;
+    color: rgba(255,255,255,0.28);
+    padding: 4px 2px;
     letter-spacing: .04em;
   }
 
+  /* Proposal cards */
   .proposal-card {
-    margin-top: 8px;
-    border: 1px solid rgba(255,255,136,0.18);
-    border-radius: 8px;
-    padding: 10px 12px;
-    background: rgba(255,255,136,0.03);
-    font-size: 11px;
+    margin-top: 6px;
+    border: 1px solid rgba(255,220,80,0.18);
+    border-radius: 7px;
+    padding: 8px 10px;
+    background: rgba(255,220,80,0.03);
+    font-size: 9px;
   }
-  .proposal-card.accepted { border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.04); opacity: .7; }
-  .proposal-card.declined { border-color: rgba(255,255,255,0.06); opacity: .4; }
+  .proposal-card.accepted { border-color: rgba(0,255,136,0.28); background: rgba(0,255,136,0.04); opacity: .65; }
+  .proposal-card.declined { border-color: rgba(255,255,255,0.05); opacity: .35; }
   .proposal-type {
-    font-size: 8.5px;
-    font-weight: 600;
-    letter-spacing: .14em;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: .15em;
     text-transform: uppercase;
-    color: rgba(255,220,100,0.6);
-    margin-bottom: 4px;
+    color: rgba(255,210,60,0.55);
+    margin-bottom: 3px;
   }
   .proposal-desc {
-    color: rgba(255,255,255,0.8);
+    color: rgba(255,255,255,0.78);
     font-weight: 500;
-    margin-bottom: 4px;
-    font-size: 11.5px;
+    margin-bottom: 3px;
+    font-size: 9.5px;
   }
   .proposal-reason {
-    color: rgba(255,255,255,0.4);
-    font-size: 10.5px;
+    color: rgba(255,255,255,0.38);
+    font-size: 8.5px;
     line-height: 1.5;
-    margin-bottom: 8px;
+    margin-bottom: 7px;
   }
-  .proposal-btns { display: flex; gap: 6px; }
+  .proposal-btns { display: flex; gap: 5px; }
   .proposal-accept {
-    background: rgba(0,255,136,0.12);
-    border: 1px solid rgba(0,255,136,0.3);
-    color: rgba(0,255,136,0.9);
-    border-radius: 5px;
-    padding: 4px 11px;
-    font-size: 10px;
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.28);
+    color: rgba(0,255,136,0.88);
+    border-radius: 4px;
+    padding: 3px 9px;
+    font-size: 8px;
     cursor: pointer;
     transition: background .15s;
     font-family: inherit;
   }
-  .proposal-accept:hover { background: rgba(0,255,136,0.22); }
+  .proposal-accept:hover { background: rgba(0,255,136,0.2); }
   .proposal-decline {
     background: transparent;
-    border: 1px solid rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.35);
-    border-radius: 5px;
-    padding: 4px 11px;
-    font-size: 10px;
+    border: 1px solid rgba(255,255,255,0.09);
+    color: rgba(255,255,255,0.3);
+    border-radius: 4px;
+    padding: 3px 9px;
+    font-size: 8px;
     cursor: pointer;
     transition: background .15s;
     font-family: inherit;
   }
-  .proposal-decline:hover { background: rgba(255,255,255,0.05); }
+  .proposal-decline:hover { background: rgba(255,255,255,0.04); }
   .proposal-status {
-    font-size: 9px;
-    letter-spacing: .06em;
-    color: rgba(255,255,255,0.35);
+    font-size: 7.5px;
+    letter-spacing: .05em;
+    color: rgba(255,255,255,0.3);
     margin-top: 2px;
   }
 
@@ -217,67 +245,75 @@
     border-top: 1px solid rgba(255,255,255,0.07);
     display: flex;
     align-items: flex-end;
-    gap: 0;
-    padding: 10px 12px;
+    padding: 8px 10px;
     flex-shrink: 0;
+    background: rgba(255,255,255,0.01);
   }
   #gekko-input {
     flex: 1;
     background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px 0 0 8px;
-    color: rgba(255,255,255,0.85);
-    font-size: 12px;
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 6px 0 0 6px;
+    color: rgba(255,255,255,0.82);
+    font-size: 10px;
     font-family: inherit;
-    padding: 8px 10px;
+    padding: 6px 9px;
     resize: none;
     outline: none;
     line-height: 1.5;
     transition: border-color .15s;
+    user-select: text;
   }
-  #gekko-input:focus { border-color: rgba(0,255,136,0.3); }
-  #gekko-input::placeholder { color: rgba(255,255,255,0.25); }
+  #gekko-input:focus { border-color: rgba(29,158,117,0.4); }
+  #gekko-input::placeholder { color: rgba(255,255,255,0.22); }
   #gekko-send {
-    background: rgba(0,255,136,0.12);
-    border: 1px solid rgba(0,255,136,0.25);
+    background: rgba(29,158,117,0.12);
+    border: 1px solid rgba(29,158,117,0.28);
     border-left: none;
-    border-radius: 0 8px 8px 0;
-    color: rgba(0,255,136,0.85);
-    font-size: 16px;
-    width: 38px;
+    border-radius: 0 6px 6px 0;
+    color: rgba(29,158,117,0.9);
+    font-size: 14px;
+    width: 34px;
     align-self: stretch;
     cursor: pointer;
     transition: background .15s;
     font-family: inherit;
+    line-height: 1;
   }
-  #gekko-send:hover { background: rgba(0,255,136,0.22); }
-  #gekko-send:disabled { opacity: .4; cursor: default; }
+  #gekko-send:hover { background: rgba(29,158,117,0.22); }
+  #gekko-send:disabled { opacity: .38; cursor: default; }
 </style>
 
 <script>
-  // v1
-  const panel    = document.getElementById('gekko-panel');
-  const toggle   = document.getElementById('gekko-toggle');
-  const closeBtn = document.getElementById('gekko-close');
-  const msgList  = document.getElementById('gekko-msgs');
+  // v3
+  const panel    = document.getElementById('gekko-panel') as HTMLElement | null;
+  const toggle   = document.getElementById('gekko-toggle') as HTMLElement | null;
+  const closeBtn = document.getElementById('gekko-close') as HTMLElement | null;
+  const hdr      = document.getElementById('gekko-hdr') as HTMLElement | null;
+  const msgList  = document.getElementById('gekko-msgs') as HTMLElement | null;
   const inputEl  = document.getElementById('gekko-input') as HTMLTextAreaElement | null;
   const sendBtn  = document.getElementById('gekko-send') as HTMLButtonElement | null;
 
-  if (!panel || !toggle || !closeBtn || !msgList || !inputEl || !sendBtn) {
-    // Component not mounted — skip
+  if (!panel || !toggle || !closeBtn || !hdr || !msgList || !inputEl || !sendBtn) {
+    // skip — component not mounted
   } else {
-    const convMessages: { role: 'user' | 'assistant'; content: string }[] = [];
+    // Conversation history in Anthropic API format.
+    // After a tool_use response, pendingToolResultIds holds the tool_use ids.
+    // The next user message will be sent as an array combining tool_results + text,
+    // satisfying Anthropic's requirement for tool_result before the next user turn.
+    const convMessages: any[] = [];
+    let pendingToolResultIds: string[] = [];
     let currentTier = 'balanced';
     let isLoading = false;
 
-    // Open / close
+    // ── open / close ────────────────────────────────────────────────────────
     toggle.addEventListener('click', () => {
       panel.classList.toggle('open');
       if (panel.classList.contains('open')) scrollBottom();
     });
     closeBtn.addEventListener('click', () => panel.classList.remove('open'));
 
-    // Tier buttons
+    // ── tier buttons ─────────────────────────────────────────────────────────
     document.querySelectorAll<HTMLButtonElement>('.tier-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         currentTier = btn.dataset.tier || 'balanced';
@@ -286,15 +322,38 @@
       });
     });
 
+    // ── drag to move ─────────────────────────────────────────────────────────
+    let dragging = false;
+    let dsx = 0, dsy = 0, dpx = 0, dpy = 0;
+
+    hdr.addEventListener('mousedown', (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest('button')) return;
+      dragging = true;
+      dsx = e.clientX;
+      dsy = e.clientY;
+      const r = panel.getBoundingClientRect();
+      dpx = r.left;
+      dpy = r.top;
+      panel.style.right = 'auto';
+      panel.style.bottom = 'auto';
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', (e: MouseEvent) => {
+      if (!dragging) return;
+      const nx = Math.max(0, Math.min(window.innerWidth - 80, dpx + e.clientX - dsx));
+      const ny = Math.max(0, Math.min(window.innerHeight - 60, dpy + e.clientY - dsy));
+      panel.style.left = nx + 'px';
+      panel.style.top  = ny + 'px';
+    });
+    document.addEventListener('mouseup', () => { dragging = false; });
+
+    // ── scroll helpers ───────────────────────────────────────────────────────
     const scrollBottom = () => {
       requestAnimationFrame(() => { msgList.scrollTop = msgList.scrollHeight; });
     };
+    const appendMsg = (el: HTMLElement) => { msgList.appendChild(el); scrollBottom(); };
 
-    const appendMsg = (el: HTMLElement) => {
-      msgList.appendChild(el);
-      scrollBottom();
-    };
-
+    // ── message renderers ────────────────────────────────────────────────────
     const addUserMsg = (text: string) => {
       const el = document.createElement('div');
       el.className = 'msg-user';
@@ -302,7 +361,22 @@
       appendMsg(el);
     };
 
-    const addAiMsg = (text: string, proposals: any[]) => {
+    const calcCostEur = (usage: any, tier: string): number | null => {
+      if (!usage) return null;
+      const rates: Record<string, { out: number; cr: number; inp: number }> = {
+        fast:     { out: 1.25, cr: 0.08, inp: 0.80 },
+        balanced: { out: 3,    cr: 0.30, inp: 3    },
+        deep:     { out: 15,   cr: 1.88, inp: 3.75 },
+      };
+      const r = rates[tier] || rates.balanced;
+      const inp = (usage.input_tokens || 0) - (usage.cache_read_input_tokens || 0);
+      const usd = ((usage.output_tokens || 0) * r.out
+                 + (usage.cache_read_input_tokens || 0) * r.cr
+                 + inp * r.inp) / 1_000_000;
+      return usd * 0.92;
+    };
+
+    const addAiMsg = (text: string, proposals: any[], usage: any) => {
       const wrapper = document.createElement('div');
       wrapper.className = 'msg-ai';
 
@@ -313,7 +387,19 @@
         wrapper.appendChild(bubble);
       }
 
-      proposals.forEach((change, idx) => {
+      // token cost line
+      const costEur = calcCostEur(usage, currentTier);
+      if (usage) {
+        const costEl = document.createElement('div');
+        costEl.className = 'msg-cost';
+        const tokOut = usage.output_tokens || 0;
+        const tokIn  = usage.input_tokens  || 0;
+        const costStr = costEur !== null ? ` · €${costEur < 0.001 ? costEur.toFixed(5) : costEur.toFixed(4)}` : '';
+        costEl.textContent = `↑${tokIn} ↓${tokOut}${costStr}`;
+        wrapper.appendChild(costEl);
+      }
+
+      proposals.forEach((change) => {
         const card = document.createElement('div');
         card.className = 'proposal-card';
 
@@ -382,11 +468,25 @@
       }
     };
 
+    // ── send ─────────────────────────────────────────────────────────────────
     const sendMessage = async () => {
       const text = inputEl.value.trim();
       if (!text || isLoading) return;
 
-      convMessages.push({ role: 'user', content: text });
+      // Build user content: if there are pending tool_results from the last AI turn,
+      // combine them with the new text in one user message (Anthropic requirement).
+      let userContent: any;
+      if (pendingToolResultIds.length > 0) {
+        userContent = [
+          ...pendingToolResultIds.map(id => ({ type: 'tool_result', tool_use_id: id, content: 'Proposals displayed to user.' })),
+          { type: 'text', text },
+        ];
+        pendingToolResultIds = [];
+      } else {
+        userContent = text;
+      }
+
+      convMessages.push({ role: 'user', content: userContent });
       inputEl.value = '';
       addUserMsg(text);
 
@@ -404,20 +504,29 @@
 
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: res.statusText }));
-          addAiMsg(`Error: ${err?.error || res.statusText}`, []);
+          addAiMsg(`Error: ${err?.error || res.statusText}`, [], null);
           return;
         }
 
         const data = await res.json();
-        const replyText: string = data.text || '';
-        const proposals: any[] = data.proposals || [];
+        const replyText: string  = data.text || '';
+        const proposals: any[]   = data.proposals || [];
+        const usage: any         = data.usage || null;
+        const rawContent: any[]  = data.rawContent || [];
 
-        if (replyText || proposals.length) {
+        if (rawContent.length > 0) {
+          // Store the full assistant content (may include tool_use blocks)
+          convMessages.push({ role: 'assistant', content: rawContent });
+          // Record tool_use ids so the next user turn includes tool_results
+          const toolUseIds = rawContent.filter((c: any) => c.type === 'tool_use').map((c: any) => c.id);
+          if (toolUseIds.length > 0) pendingToolResultIds = toolUseIds;
+        } else if (replyText) {
           convMessages.push({ role: 'assistant', content: replyText });
         }
-        addAiMsg(replyText, proposals);
+
+        addAiMsg(replyText, proposals, usage);
       } catch (err: any) {
-        addAiMsg(`Connection error: ${err?.message || 'unknown'}`, []);
+        addAiMsg(`Connection error: ${err?.message || 'unknown'}`, [], null);
       } finally {
         isLoading = false;
         sendBtn.disabled = false;
@@ -430,7 +539,7 @@
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     });
 
-    // --- helpers ---
+    // ── helpers ───────────────────────────────────────────────────────────────
     const formatChangeType = (type: string) => {
       const map: Record<string, string> = {
         create_node: 'Add node',
@@ -447,13 +556,13 @@
         case 'create_node':
           return `"${change.fields?.title || change.new_key}" (${change.fields?.cat || 'node'})`;
         case 'update_node':
-          return `Update "${change.node_key}"${change.fields?.title ? ` → title: "${change.fields.title}"` : ''}${change.fields?.status ? ` · status: ${change.fields.status}` : ''}`;
+          return `"${change.node_key}"${change.fields?.title ? ` → "${change.fields.title}"` : ''}${change.fields?.status ? ` · ${change.fields.status}` : ''}`;
         case 'delete_node':
-          return `Remove "${change.node_key}"`;
+          return `"${change.node_key}"`;
         case 'create_edge':
           return `${change.from_node} → ${change.to_node}`;
         case 'delete_edge':
-          return `Remove ${change.from_node} → ${change.to_node}`;
+          return `${change.from_node} → ${change.to_node}`;
         default:
           return change.type;
       }
