@@ -31,7 +31,7 @@
   </div>
 </div>
 
-<style>
+<style is:global>
   #gekko-toggle {
     position: fixed;
     bottom: 66px;
@@ -627,8 +627,12 @@
         });
 
         if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: res.statusText }));
-          addAiMsg(`Error: ${err?.error || res.statusText}`, null);
+          const errText = await res.text().catch(() => '');
+          let errMsg = `HTTP ${res.status}`;
+          if (res.status === 504) errMsg = 'Request timed out (504). Try again or switch to Fast ⚡ mode.';
+          else if (res.status === 500) { try { errMsg = JSON.parse(errText)?.error || errText || 'Server error'; } catch { errMsg = errText || 'Server error'; } }
+          else errMsg = errText || res.statusText || errMsg;
+          addAiMsg(errMsg, null);
           return;
         }
 

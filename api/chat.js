@@ -1,4 +1,4 @@
-export const config = { runtime: 'edge' };
+export const config = { runtime: 'edge', maxDuration: 60 };
 
 const MODELS = {
   fast:     'claude-haiku-4-5-20251001',
