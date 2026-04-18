@@ -4,6 +4,7 @@
 </button>
 
 <div id="gekko-panel" role="complementary" aria-label="Gecko career consultant">
+  <div id="gekko-resize" title="Resize"></div>
   <div id="gekko-hdr" title="Drag to move">
     <div style="display:flex;align-items:center;gap:7px;">
       <img src="/images/goal_gekko.gif" alt="Gecko" width="18" height="18" style="border-radius:50%;object-fit:contain;flex-shrink:0;">
@@ -21,6 +22,8 @@
   </div>
 
   <div id="gekko-msgs"></div>
+
+  <div id="gekko-proposals" style="display:none;"></div>
 
   <div id="gekko-input-wrap">
     <textarea id="gekko-input" placeholder="Ask Gecko about your career…" rows="2"></textarea>
@@ -69,11 +72,22 @@
     border-radius: 10px;
     display: none;
     flex-direction: column;
-    resize: both;
     overflow: hidden;
     box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04), 0 0 24px rgba(0,255,136,0.05);
     font-family: Inter, system-ui, sans-serif;
     user-select: none;
+  }
+
+  #gekko-resize {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 16px;
+    height: 16px;
+    cursor: sw-resize;
+    z-index: 10;
+    border-bottom-left-radius: 9px;
+    background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.08) 50%);
   }
   #gekko-panel.open { display: flex; }
 
@@ -130,33 +144,31 @@
   #gekko-msgs::-webkit-scrollbar-track { background: transparent; }
   #gekko-msgs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
 
-  /* User bubble — blue tint */
+  /* User bubble — right-aligned solid blue */
   .msg-user {
     align-self: flex-end;
-    background: rgba(55,138,221,0.14);
-    border: 1px solid rgba(55,138,221,0.28);
+    background: rgba(30,96,186,0.88);
     border-radius: 8px 8px 2px 8px;
-    padding: 5px 8px;
-    font-size: 8.5px;
-    color: rgba(255,255,255,0.82);
-    max-width: 86%;
+    padding: 5px 9px;
+    font-size: 7.5px;
+    color: rgba(255,255,255,0.92);
+    max-width: 82%;
     line-height: 1.55;
     white-space: pre-wrap;
     word-break: break-word;
   }
 
-  /* AI bubble — teal/green tint */
+  /* Gecko bubble — left-aligned dark slate */
   .msg-ai {
     align-self: flex-start;
     max-width: 92%;
   }
   .msg-ai-bubble {
-    background: rgba(29,158,117,0.08);
-    border: 1px solid rgba(29,158,117,0.2);
+    background: rgba(36,40,56,0.95);
     border-radius: 2px 8px 8px 8px;
-    padding: 5px 8px;
-    font-size: 8.5px;
-    color: rgba(255,255,255,0.78);
+    padding: 5px 9px;
+    font-size: 7.5px;
+    color: rgba(255,255,255,0.82);
     line-height: 1.65;
     white-space: pre-wrap;
     word-break: break-word;
@@ -178,17 +190,16 @@
     letter-spacing: .04em;
   }
 
-  /* Proposal cards */
+  /* Proposal card — shown in tray only */
   .proposal-card {
-    margin-top: 6px;
     border: 1px solid rgba(255,220,80,0.18);
     border-radius: 7px;
     padding: 7px 9px;
     background: rgba(255,220,80,0.03);
     font-size: 8px;
   }
-  .proposal-card.accepted { border-color: rgba(0,255,136,0.28); background: rgba(0,255,136,0.04); opacity: .65; }
-  .proposal-card.declined { border-color: rgba(255,255,255,0.05); opacity: .35; }
+  .proposal-card.accepted { border-color: rgba(0,255,136,0.22); background: rgba(0,255,136,0.03); opacity: .5; }
+  .proposal-card.declined { border-color: rgba(255,255,255,0.05); opacity: .28; }
   .proposal-type {
     font-size: 7px;
     font-weight: 700;
@@ -234,11 +245,51 @@
     font-family: inherit;
   }
   .proposal-decline:hover { background: rgba(255,255,255,0.04); }
+  .proposal-discuss {
+    background: transparent;
+    border: 1px solid rgba(255,170,60,0.22);
+    color: rgba(255,190,80,0.62);
+    border-radius: 4px;
+    padding: 3px 9px;
+    font-size: 8px;
+    cursor: pointer;
+    transition: background .15s;
+    font-family: inherit;
+  }
+  .proposal-discuss:hover { background: rgba(255,170,60,0.08); }
   .proposal-status {
     font-size: 7.5px;
     letter-spacing: .05em;
     color: rgba(255,255,255,0.3);
     margin-top: 2px;
+  }
+
+  #gekko-proposals {
+    border-top: 1px solid rgba(255,220,80,0.14);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,220,80,0.02);
+    padding: 8px 10px;
+    flex-shrink: 0;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  #gekko-proposals::-webkit-scrollbar { width: 3px; }
+  #gekko-proposals::-webkit-scrollbar-thumb { background: rgba(255,220,80,0.15); border-radius: 3px; }
+
+  /* Proposal cards in tray */
+  .proposal-card {
+    font-size: 8px;
+  }
+  .proposal-card + .proposal-card { margin-top: 4px; }
+  .proposal-card.accepted { opacity: .5; }
+  .proposal-card.declined { opacity: .28; }
+  .proposal-tray-label {
+    font-size: 7px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(255,210,60,0.4);
+    margin-bottom: 5px;
+    font-weight: 600;
   }
 
   #gekko-input-wrap {
@@ -345,7 +396,38 @@
       panel.style.left = nx + 'px';
       panel.style.top  = ny + 'px';
     });
-    document.addEventListener('mouseup', () => { dragging = false; });
+    document.addEventListener('mouseup', () => { dragging = false; resizing = false; });
+
+    // ── bottom-left resize handle ────────────────────────────────────────────
+    const resizeHandle = document.getElementById('gekko-resize') as HTMLElement | null;
+    let resizing = false;
+    let rsStartX = 0, rsStartY = 0, rsStartW = 0, rsStartH = 0, rsRightEdge = 0;
+
+    resizeHandle?.addEventListener('mousedown', (e: MouseEvent) => {
+      resizing = true;
+      rsStartX = e.clientX;
+      rsStartY = e.clientY;
+      const r = panel.getBoundingClientRect();
+      rsStartW = r.width;
+      rsStartH = r.height;
+      rsRightEdge = r.right;
+      panel.style.right = 'auto';
+      panel.style.bottom = 'auto';
+      panel.style.left = r.left + 'px';
+      panel.style.top  = r.top  + 'px';
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    document.addEventListener('mousemove', (e: MouseEvent) => {
+      if (!resizing) return;
+      const dx = e.clientX - rsStartX;
+      const dy = e.clientY - rsStartY;
+      const newW = Math.max(240, Math.min(640, rsStartW - dx));
+      const newH = Math.max(260, Math.min(window.innerHeight * 0.88, rsStartH + dy));
+      panel.style.left   = (rsRightEdge - newW) + 'px';
+      panel.style.width  = newW + 'px';
+      panel.style.height = newH + 'px';
+    });
 
     // ── scroll helpers ───────────────────────────────────────────────────────
     const scrollBottom = () => {
@@ -376,7 +458,9 @@
       return usd * 0.92;
     };
 
-    const addAiMsg = (text: string, proposals: any[], usage: any) => {
+    const trayEl = document.getElementById('gekko-proposals') as HTMLElement | null;
+
+    const addAiMsg = (text: string, usage: any) => {
       const wrapper = document.createElement('div');
       wrapper.className = 'msg-ai';
 
@@ -387,7 +471,6 @@
         wrapper.appendChild(bubble);
       }
 
-      // token cost line
       const costEur = calcCostEur(usage, currentTier);
       if (usage) {
         const costEl = document.createElement('div');
@@ -399,13 +482,36 @@
         wrapper.appendChild(costEl);
       }
 
-      proposals.forEach((change) => {
+      appendMsg(wrapper);
+    };
+
+    const showProposalTray = (proposals: any[]) => {
+      if (!trayEl || proposals.length === 0) return;
+      trayEl.innerHTML = '';
+      trayEl.style.display = 'block';
+
+      const label = document.createElement('div');
+      label.className = 'proposal-tray-label';
+      label.textContent = `Gecko proposes ${proposals.length} change${proposals.length > 1 ? 's' : ''}`;
+      trayEl.appendChild(label);
+
+      let currentIdx = 0;
+      let currentCard: HTMLElement | null = null;
+
+      const showOne = (idx: number) => {
+        currentCard?.remove();
+        if (idx >= proposals.length) {
+          trayEl.style.display = 'none';
+          return;
+        }
+        const change = proposals[idx];
         const card = document.createElement('div');
         card.className = 'proposal-card';
+        currentCard = card;
 
         const typeLabel = document.createElement('div');
         typeLabel.className = 'proposal-type';
-        typeLabel.textContent = formatChangeType(change.type);
+        typeLabel.textContent = `${formatChangeType(change.type)} · ${idx + 1}/${proposals.length}`;
         card.appendChild(typeLabel);
 
         const desc = document.createElement('div');
@@ -423,36 +529,54 @@
         const btns = document.createElement('div');
         btns.className = 'proposal-btns';
 
+        const advance = () => { currentIdx++; setTimeout(() => showOne(currentIdx), 60); };
+
         const acceptBtn = document.createElement('button');
         acceptBtn.className = 'proposal-accept';
         acceptBtn.textContent = '✓ Accept';
         acceptBtn.addEventListener('click', () => {
           document.dispatchEvent(new CustomEvent('gekko:apply-change', { detail: change }));
           card.classList.add('accepted');
-          const status = document.createElement('div');
-          status.className = 'proposal-status';
-          status.textContent = '✓ Applied';
-          btns.replaceWith(status);
+          const st = document.createElement('div');
+          st.className = 'proposal-status';
+          st.textContent = '✓ Applied';
+          btns.replaceWith(st);
+          advance();
         });
 
-        const declineBtn = document.createElement('button');
-        declineBtn.className = 'proposal-decline';
-        declineBtn.textContent = '✕ Decline';
-        declineBtn.addEventListener('click', () => {
+        const skipBtn = document.createElement('button');
+        skipBtn.className = 'proposal-decline';
+        skipBtn.textContent = '✕ Skip';
+        skipBtn.addEventListener('click', () => {
           card.classList.add('declined');
-          const status = document.createElement('div');
-          status.className = 'proposal-status';
-          status.textContent = '— Declined';
-          btns.replaceWith(status);
+          const st = document.createElement('div');
+          st.className = 'proposal-status';
+          st.textContent = '— Skipped';
+          btns.replaceWith(st);
+          advance();
+        });
+
+        const discussBtn = document.createElement('button');
+        discussBtn.className = 'proposal-discuss';
+        discussBtn.textContent = '↩ Discuss';
+        discussBtn.addEventListener('click', () => {
+          if (inputEl) { inputEl.value = `Re: "${describeChange(change)}" — `; inputEl.focus(); }
+          card.classList.add('declined');
+          const st = document.createElement('div');
+          st.className = 'proposal-status';
+          st.textContent = '↩ Discuss';
+          btns.replaceWith(st);
+          advance();
         });
 
         btns.appendChild(acceptBtn);
-        btns.appendChild(declineBtn);
+        btns.appendChild(skipBtn);
+        btns.appendChild(discussBtn);
         card.appendChild(btns);
-        wrapper.appendChild(card);
-      });
+        trayEl.appendChild(card);
+      };
 
-      appendMsg(wrapper);
+      showOne(0);
     };
 
     let loadingEl: HTMLElement | null = null;
@@ -504,7 +628,7 @@
 
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: res.statusText }));
-          addAiMsg(`Error: ${err?.error || res.statusText}`, [], null);
+          addAiMsg(`Error: ${err?.error || res.statusText}`, null);
           return;
         }
 
@@ -524,9 +648,10 @@
           convMessages.push({ role: 'assistant', content: replyText });
         }
 
-        addAiMsg(replyText, proposals, usage);
+        addAiMsg(replyText, usage);
+        if (proposals.length > 0) showProposalTray(proposals);
       } catch (err: any) {
-        addAiMsg(`Connection error: ${err?.message || 'unknown'}`, [], null);
+        addAiMsg(`Connection error: ${err?.message || 'unknown'}`, null);
       } finally {
         isLoading = false;
         sendBtn.disabled = false;

@@ -244,6 +244,10 @@ const { fullscreen = true } = Astro.props;
     <input id="se-u" placeholder="URL (optional)">
     <textarea id="se-d" rows="2" placeholder="Detail on hover"></textarea>
     <div class="row2">
+      <input id="se-cost" placeholder="Cost (e.g. €800)" style="font-size:9px;">
+      <input id="se-time" placeholder="Months" type="number" min="0" style="font-size:9px;">
+    </div>
+    <div class="row2">
       <select id="se-c"></select>
       <select id="se-st"><option value="planned">Planned</option><option value="ongoing">Ongoing</option><option value="done">Completed</option></select>
     </div>
@@ -254,6 +258,10 @@ const { fullscreen = true } = Astro.props;
     <input id="sa-t" placeholder="Title (required)"><input id="sa-s" placeholder="Subtitle">
     <input id="sa-u" placeholder="URL (optional)">
     <textarea id="sa-d" rows="2" placeholder="Detail on hover"></textarea>
+    <div class="row2">
+      <input id="sa-cost" placeholder="Cost (e.g. €800)" style="font-size:9px;">
+      <input id="sa-time" placeholder="Months" type="number" min="0" style="font-size:9px;">
+    </div>
     <div class="row2">
       <select id="sa-c"></select>
       <select id="sa-st"><option value="planned">Planned</option><option value="ongoing">Ongoing</option><option value="done">Completed</option></select>
@@ -482,6 +490,8 @@ const { fullscreen = true } = Astro.props;
           sub: node.subtitle || '',
           url: node.url || '',
           detail: node.detail || '',
+          cost: node.costs || '',
+          time: node.time_in_months != null ? String(node.time_in_months) : '',
           x: node.x,
           y: node.y,
         }));
@@ -723,10 +733,22 @@ const { fullscreen = true } = Astro.props;
             sl = splitPoint > 0 ? [t2.slice(0, splitPoint), t2.slice(splitPoint + 1)] : [t2];
           } else sl = [t2];
         }
-        const tw = (t1 || '').length * 5.8 / 2;
+        const wrapLine = (txt, maxC) => {
+          if (!txt || txt.length <= maxC) return [txt || ''];
+          const words = txt.split(' ');
+          const lines = []; let cur = '';
+          for (const w of words) {
+            if (cur && (cur + ' ' + w).length > maxC) { lines.push(cur); cur = w; }
+            else cur = cur ? cur + ' ' + w : w;
+          }
+          if (cur) lines.push(cur);
+          return lines;
+        };
+        const t1l = wrapLine(t1 || '', 15);
+        const tw = t1l.reduce((max, l) => Math.max(max, l.length * 5.8 / 2), 0);
         const sw = sl.reduce((maxWidth, line) => Math.max(maxWidth, line.length * 4.8 / 2), 0);
-        const r = Math.round(Math.max(50, Math.min(90, Math.max(tw, sw) + 26)));
-        return { r, sl };
+        const r = Math.round(Math.max(50, Math.min(76, Math.max(tw, sw) + 26)));
+        return { r, t1l, sl };
       };
 
       const normalizeNodeUrl = (rawValue) => {
@@ -954,18 +976,19 @@ const { fullscreen = true } = Astro.props;
         E('circle', { cx: String(-planet.r * 0.08), cy: String(-planet.r * 0.1), r: String(planet.r * 0.94), fill: PLANET_STYLE.shellInner, opacity: '1' }, group);
         E('circle', { cx: String(-planet.r * 0.34), cy: String(-planet.r * 0.34), r: String(planet.r * 0.34), fill: PLANET_STYLE.haze, opacity: '1' }, group);
         E('circle', { cx: '0', cy: '0', r: String(planet.r), fill: 'none', stroke: PLANET_STYLE.atmosphere, 'stroke-width': '1.8', opacity: '0.88' }, group);
-        const lines = metrics.sl.length;
-        const titleY = lines === 0 ? 4 : lines === 1 ? -6 : -10;
-        const title = E('text', { x: '0', y: String(titleY), 'text-anchor': 'middle', 'font-size': '10.5', 'font-weight': '500', fill: 'rgba(255,255,255,0.92)' }, group);
-        title.textContent = planet.t1;
-        if (lines >= 1) {
-          const subtitle1 = E('text', { x: '0', y: String(lines === 1 ? 8 : 3), 'text-anchor': 'middle', 'font-size': '9', fill: 'rgba(255,255,255,0.48)' }, group);
-          subtitle1.textContent = metrics.sl[0];
-        }
-        if (lines >= 2) {
-          const subtitle2 = E('text', { x: '0', y: '15', 'text-anchor': 'middle', 'font-size': '9', fill: 'rgba(255,255,255,0.48)' }, group);
-          subtitle2.textContent = metrics.sl[1];
-        }
+        const t1l = metrics.t1l;
+        const sl = metrics.sl;
+        const totalLines = t1l.length + sl.length;
+        const lineH = 11;
+        const startY = Math.round(-(totalLines * lineH) / 2 + lineH * 0.8);
+        t1l.forEach((line, i) => {
+          const el = E('text', { x: '0', y: String(startY + i * lineH), 'text-anchor': 'middle', 'font-size': '10.5', 'font-weight': '500', fill: 'rgba(255,255,255,0.92)' }, group);
+          el.textContent = line;
+        });
+        sl.forEach((line, i) => {
+          const el = E('text', { x: '0', y: String(startY + (t1l.length + i) * lineH), 'text-anchor': 'middle', 'font-size': '9', fill: 'rgba(255,255,255,0.48)' }, group);
+          el.textContent = line;
+        });
         E('circle', { cx: '0', cy: '0', r: String(planet.r + 6), fill: 'none', stroke: PLANET_STYLE.atmosphere, 'stroke-width': '2.5', opacity: '0', id: `pr-${planet.id}` }, group);
         const dc = Math.round(planet.r * 0.7);
         const dotGroup = mkDots(group, dc, -dc, planet.id, true);
@@ -1002,10 +1025,19 @@ const { fullscreen = true } = Astro.props;
         const sparkle = E('circle', { cx: '0', cy: '0', r: '9', fill: status.c, filter: 'url(#glow)', opacity: '0.12' }, sprite);
         const starShape = E('path', { d: sp(7), fill: status.c, filter: 'url(#glow)', opacity: status.o }, sprite);
         E('circle', { cx: '0', cy: '0', r: '13', fill: 'none', stroke: cat.c, 'stroke-width': '2.5', opacity: '0', id: `r-${node.id}` }, sprite);
-          const title = E('text', { x: '14', y: '-4', 'font-size': '10', 'font-weight': '500', fill: 'rgba(255,255,255,0.9)' }, group);
+        const title = E('text', { x: '14', y: '-3', 'font-size': '8.5', 'font-weight': '500', fill: 'rgba(255,255,255,0.9)' }, group);
         title.textContent = node.title;
-          const subtitle = E('text', { x: '14', y: '9', 'font-size': '8', fill: 'rgba(255,255,255,0.4)' }, group);
+        const subtitle = E('text', { x: '14', y: '8', 'font-size': '7.5', fill: 'rgba(255,255,255,0.4)' }, group);
         subtitle.textContent = node.sub;
+        const hasCost = node.cost && String(node.cost).trim();
+        const hasTime = node.time && String(node.time).trim();
+        if (hasCost || hasTime) {
+          const parts = [];
+          if (hasCost) parts.push(String(node.cost));
+          if (hasTime) parts.push(`${node.time}mo`);
+          const metaEl = E('text', { x: '14', y: '18', 'font-size': '6.5', fill: 'rgba(255,255,255,0.26)' }, group);
+          metaEl.textContent = parts.join(' · ');
+        }
         const dotGroup = mkDots(group, -13, -13, node.id, false);
         dotGroup.addEventListener('mousedown', (event) => { event.stopPropagation(); event.preventDefault(); });
         dotGroup.addEventListener('click', (event) => { event.stopPropagation(); showSCtx(node.id, event.clientX, event.clientY); });
@@ -1372,6 +1404,8 @@ const { fullscreen = true } = Astro.props;
         container.querySelector('#se-s').value = node.sub || '';
         container.querySelector('#se-u').value = node.url || '';
         container.querySelector('#se-d').value = node.detail || '';
+        container.querySelector('#se-cost').value = node.cost || '';
+        container.querySelector('#se-time').value = node.time || '';
         container.querySelector('#se-c').value = node.cat || 'cert';
         container.querySelector('#se-st').value = node.status || 'planned';
         ['pep', 'sep', 'sap'].forEach((panelId) => {
@@ -1386,6 +1420,8 @@ const { fullscreen = true } = Astro.props;
         node.sub = container.querySelector('#se-s').value.trim();
         node.url = normalizeNodeUrl(container.querySelector('#se-u').value);
         node.detail = container.querySelector('#se-d').value.trim();
+        node.cost = container.querySelector('#se-cost').value.trim();
+        node.time = container.querySelector('#se-time').value.trim();
         node.cat = container.querySelector('#se-c').value;
         node.status = container.querySelector('#se-st').value;
         document.getElementById(`sn-${node.id}`)?.remove();
@@ -1393,7 +1429,7 @@ const { fullscreen = true } = Astro.props;
         makeStarEl(node);
         drawEdges();
         container.querySelector('#sep').style.display = 'none';
-        dbUpsertNode(node.id, { cat: node.cat, title: node.title, subtitle: node.sub, url: node.url, detail: node.detail, status: node.status, x: node.x, y: node.y });
+        dbUpsertNode(node.id, { cat: node.cat, title: node.title, subtitle: node.sub, url: node.url, detail: node.detail, status: node.status, costs: node.cost || null, time_in_months: node.time ? Number(node.time) : null, x: node.x, y: node.y });
       };
       const closeSep = () => { container.querySelector('#sep').style.display = 'none'; };
       const closeSap = () => {
@@ -1408,19 +1444,21 @@ const { fullscreen = true } = Astro.props;
         const sub = container.querySelector('#sa-s').value.trim() || (CATS[cat]?.l || '');
         const url = normalizeNodeUrl(container.querySelector('#sa-u').value);
         const detail = container.querySelector('#sa-d').value.trim();
+        const cost = container.querySelector('#sa-cost').value.trim();
+        const time = container.querySelector('#sa-time').value.trim();
         const pos = apos || { x: 400, y: 300 };
         apos = null;
         const nk = `u${Date.now()}`;
-        const node = { id: nk, cat, status, title, sub, url, detail, x: pos.x, y: pos.y };
+        const node = { id: nk, cat, status, title, sub, url, detail, cost, time, x: pos.x, y: pos.y };
         nodes.push(node);
         makeStarEl(node);
         drawEdges();
-        ['sa-t', 'sa-s', 'sa-u', 'sa-d'].forEach((inputId) => {
+        ['sa-t', 'sa-s', 'sa-u', 'sa-d', 'sa-cost', 'sa-time'].forEach((inputId) => {
           const input = container.querySelector(`#${inputId}`);
           if (input) input.value = '';
         });
         container.querySelector('#sap').style.display = 'none';
-        dbInsertNode(nk, { cat, title, subtitle: sub, url, detail, status, x: node.x, y: node.y });
+        dbInsertNode(nk, { cat, title, subtitle: sub, url, detail, status, costs: cost || null, time_in_months: time ? Number(time) : null, x: node.x, y: node.y });
       };
       const dupN = (id) => {
         const source = nmap[id];
@@ -1617,6 +1655,27 @@ const { fullscreen = true } = Astro.props;
 
       (window as any).__gekkoApply = (change: any) => {
         const { type, node_key, new_key, fields, from_node, to_node } = change;
+
+        const findFreePos = (isDest: boolean) => {
+          const allPos = [
+            ...planets.map(p => ({ x: p.x, y: p.y })),
+            ...Object.values(nmap).map((n: any) => ({ x: n.x, y: n.y })),
+          ];
+          const minDist = isDest ? 160 : 90;
+          const candidates = isDest
+            ? [[200,100],[400,100],[600,100],[800,100],[150,180],[350,180],[550,180],[750,180],[300,80],[700,80]]
+            : [[200,220],[320,310],[450,260],[570,360],[680,220],[200,390],[340,420],[480,340],[600,420],[730,300],[260,160],[700,160]];
+          for (const [cx, cy] of candidates) {
+            if (allPos.every((p: any) => Math.hypot(p.x - cx, p.y - cy) > minDist)) return { x: cx, y: cy };
+          }
+          for (let a = 0; a < 40; a++) {
+            const x = Math.round(100 + Math.random() * 700);
+            const y = isDest ? Math.round(70 + Math.random() * 130) : Math.round(180 + Math.random() * 320);
+            if (allPos.every((p: any) => Math.hypot(p.x - x, p.y - y) > minDist)) return { x, y };
+          }
+          return { x: isDest ? 450 : 400, y: isDest ? 110 : 300 };
+        };
+
         if (type === 'update_node') {
           if (!node_key) return;
           if (pmap[node_key]) {
@@ -1638,28 +1697,34 @@ const { fullscreen = true } = Astro.props;
             if (fields?.status) nd.status = normalizeStatus(fields.status);
             if (fields?.url !== undefined) nd.url = normalizeNodeUrl(fields.url || '');
             if (fields?.cat) nd.cat = normalizeCategory(fields.cat);
+            if (fields?.cost !== undefined) nd.cost = fields.cost || '';
+            if (fields?.time_in_months !== undefined) nd.time = fields.time_in_months != null ? String(fields.time_in_months) : '';
             document.getElementById(`sn-${nd.id}`)?.remove();
             delete nels[nd.id];
             makeStarEl(nd);
             drawEdges();
-            dbUpsertNode(nd.id, { cat: nd.cat, title: nd.title, subtitle: nd.sub, url: nd.url, detail: nd.detail, status: nd.status, x: nd.x, y: nd.y });
+            dbUpsertNode(nd.id, { cat: nd.cat, title: nd.title, subtitle: nd.sub, url: nd.url, detail: nd.detail, status: nd.status, costs: nd.cost || null, time_in_months: nd.time ? Number(nd.time) : null, x: nd.x, y: nd.y });
           }
         } else if (type === 'create_node') {
           const key = new_key || `u${Date.now()}`;
           const cat = fields?.cat || 'other';
           if (cat === 'destination') {
-            const planet = { id: key, t1: fields?.title || 'New Goal', t2: fields?.subtitle || '', detail: fields?.detail || '', x: 450, y: 110, cid: 'teal', r: 68 };
+            const pos = findFreePos(true);
+            const planet = { id: key, t1: fields?.title || 'New Goal', t2: fields?.subtitle || '', detail: fields?.detail || '', x: pos.x, y: pos.y, cid: 'teal', r: 68 };
             planets.push(planet);
             makePlanetEl(planet);
             drawEdges();
             const pal = pcm.teal;
             dbInsertNode(key, { cat: 'destination', title: planet.t1, subtitle: planet.t2, detail: planet.detail, status: 'planned', x: planet.x, y: planet.y, color: pal.c, dark_color: pal.k, radius: planet.r });
           } else {
-            const nd = { id: key, cat: normalizeCategory(cat), status: normalizeStatus(fields?.status || 'planned'), title: fields?.title || 'New Step', sub: fields?.subtitle || '', url: normalizeNodeUrl(fields?.url || ''), detail: fields?.detail || '', x: 400, y: 300 };
+            const pos = findFreePos(false);
+            const cost = fields?.cost || '';
+            const time = fields?.time_in_months != null ? String(fields.time_in_months) : '';
+            const nd = { id: key, cat: normalizeCategory(cat), status: normalizeStatus(fields?.status || 'planned'), title: fields?.title || 'New Step', sub: fields?.subtitle || '', url: normalizeNodeUrl(fields?.url || ''), detail: fields?.detail || '', cost, time, x: pos.x, y: pos.y };
             nodes.push(nd);
             makeStarEl(nd);
             drawEdges();
-            dbInsertNode(key, { cat: nd.cat, title: nd.title, subtitle: nd.sub, url: nd.url, detail: nd.detail, status: nd.status, x: nd.x, y: nd.y });
+            dbInsertNode(key, { cat: nd.cat, title: nd.title, subtitle: nd.sub, url: nd.url, detail: nd.detail, status: nd.status, costs: cost || null, time_in_months: time ? Number(time) : null, x: nd.x, y: nd.y });
           }
         } else if (type === 'delete_node') {
           if (!node_key) return;
