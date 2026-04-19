@@ -1787,19 +1787,34 @@ const { fullscreen = true } = Astro.props;
 
     if (hasSupabase && supabase) {
       setState('Loading…');
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
+      let authHandled = false;
+
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        // INITIAL_SESSION fires once on startup (covers already-logged-in + OAuth redirect)
+        // SIGNED_IN fires when user explicitly signs in (OAuth callback)
+        if (authHandled) return;
+        if (event !== 'INITIAL_SESSION' && event !== 'SIGNED_IN') return;
+        authHandled = true;
+
         if (session?.user) {
-          await loadBoard(session.user);
+          // If URL still has OAuth code/token, reload to clean URL after session is stored
+          if (window.location.search.includes('code=') || window.location.hash.includes('access_token')) {
+            window.location.replace(window.location.pathname);
+            return;
+          }
+          try {
+            await loadBoard(session.user);
+          } catch {
+            openLocalBoard(session.user, 'Cloud sync failed. Changes stay in this browser only.');
+          }
         } else {
           openPublicBoard();
-          supabase.auth.onAuthStateChange((event, s) => {
-            if (event === 'SIGNED_IN' && s?.user) window.location.replace(location.pathname);
+          // Re-subscribe for when user signs in via modal
+          supabase.auth.onAuthStateChange((ev, s) => {
+            if (ev === 'SIGNED_IN' && s?.user) window.location.replace(window.location.pathname);
           });
         }
-      } catch {
-        openPublicBoard();
-      }
+      });
     } else {
       openPublicBoard();
     }
