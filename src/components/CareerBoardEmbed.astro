@@ -160,7 +160,7 @@ const { fullscreen = true } = Astro.props;
     <a id="privacy-link" href="#" style="font-size:9px;color:rgba(255,255,255,0.22);text-decoration:none;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Datenschutz</a>
     <button id="impressum-link" type="button" data-impressum-trigger style="font-size:9px;color:rgba(255,255,255,0.22);background:none;border:none;padding:0;cursor:pointer;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Impressum</button>
   </div>
-  <span style="font-size:7.5px;color:rgba(255,255,255,0.18);letter-spacing:.05em;font-family:inherit;align-self:flex-end;">v0.020</span>
+  <span style="font-size:7.5px;color:rgba(255,255,255,0.18);letter-spacing:.05em;font-family:inherit;align-self:flex-end;">v0.021</span>
 </div>
 <div style="position:fixed;top:20px;right:20px;z-index:50;display:flex;gap:8px;align-items:center;">
   <button id="ai-chat-btn" title="Chat with Gecko AI" style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.28);border-radius:50%;width:29px;height:29px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:0.85;transition:opacity .2s,border-color .2s,background .2s;" onmouseover="this.style.opacity='1';this.style.borderColor='rgba(0,255,136,0.7)';this.style.background='rgba(0,255,136,0.15)'" onmouseout="this.style.opacity='0.85';this.style.borderColor='rgba(0,255,136,0.28)';this.style.background='rgba(0,255,136,0.08)'" onclick="var t=document.getElementById('gekko-toggle');if(t)t.click()"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 2 L11.6 8.4 L18 10 L11.6 11.6 L10 18 L8.4 11.6 L2 10 L8.4 8.4 Z" fill="#00FF88"/><circle cx="16.5" cy="3.5" r="1.4" fill="#00FF88" opacity="0.6"/><circle cx="4" cy="16" r="1" fill="#00FF88" opacity="0.45"/></svg></button>
@@ -1139,7 +1139,7 @@ const { fullscreen = true } = Astro.props;
         mkDock(group, 0, -17, node.id, 'star');
         group.addEventListener('mouseenter', () => {
           if (!hDrag && !mode) {
-            sTip(cat.c, cat.l, node.title, node.detail, node.x, node.y - 13, node.id, null);
+            sTip(cat.c, cat.l, node.title, node.detail, node.x, node.y - 13, node.id, null, node.url);
             document.getElementById(`d-${node.id}`)?.setAttribute('opacity', '1');
           }
         });
@@ -1272,7 +1272,7 @@ const { fullscreen = true } = Astro.props;
         div.textContent = value;
         return div.innerHTML;
       };
-      const sTip = (color, cls, title, detail, sx, sy, nid, pid) => {
+      const sTip = (color, cls, title, detail, sx, sy, nid, pid, url = '') => {
         if (mode) return;
         if (ht) clearTimeout(ht);
         const sr = svg.getBoundingClientRect();
@@ -1285,7 +1285,7 @@ const { fullscreen = true } = Astro.props;
         tip.style.cssText = `display:block;position:absolute;z-index:30;width:220px;border-radius:10px;padding:10px 12px;pointer-events:all;border:1px solid ${color}4D;background:rgba(6,10,22,0.97);left:${px}px;top:${py}px;`;
         const safeDetail = detail ? detail.replace(/\n/g, '<br>') : '';
         tip.innerHTML = `<div style="position:relative;"><div style="font-size:8.5px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:${color};margin-bottom:4px;">${cls}</div><div style="font-size:12px;font-weight:500;color:rgba(255,255,255,0.95);margin-bottom:4px;">${escHtml(title)}</div>${safeDetail ? `<div style="font-size:10.5px;color:rgba(255,255,255,0.62);line-height:1.55;">${safeDetail}</div>` : ''}</div>`;
-        const nodeUrl = (nid && nid !== 'home' ? nmap[nid]?.url : null) || null;
+        const nodeUrl = url || null;
         if (urlPrev) {
           if (nodeUrl) {
             let domain = '';
