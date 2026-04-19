@@ -1321,7 +1321,7 @@ const { fullscreen = true } = Astro.props;
                 placeholder.replaceChildren(link);
               }
             };
-            urlWrap.onclick = (e) => { e.stopPropagation(); window.open(rawUrl, '_blank', 'noopener,noreferrer'); };
+            urlWrap.style.cursor = 'default';
           }
         }
       };
@@ -1340,6 +1340,10 @@ const { fullscreen = true } = Astro.props;
         if (ht) clearTimeout(ht);
       });
       tip.addEventListener('mouseleave', sHide);
+      // Hide tooltip before any click fires, so it never intercepts node clicks
+      document.addEventListener('pointerdown', (e) => {
+        if (!tip.contains(e.target as Node)) hTip(true);
+      }, { capture: true });
 
       const posCtx = (cx, cy) => {
         const wr = container.querySelector('.cvwrap').getBoundingClientRect();
