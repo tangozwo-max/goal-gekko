@@ -1027,15 +1027,18 @@ const { fullscreen = true } = Astro.props;
         E('circle', { cx: '0', cy: '0', r: '13', fill: 'none', stroke: cat.c, 'stroke-width': '2.5', opacity: '0', id: `r-${node.id}` }, sprite);
         const title = E('text', { x: '14', y: '-3', 'font-size': '8.5', 'font-weight': '500', fill: 'rgba(255,255,255,0.9)' }, group);
         title.textContent = node.title;
-        const subtitle = E('text', { x: '14', y: '8', 'font-size': '7.5', fill: 'rgba(255,255,255,0.4)' }, group);
-        subtitle.textContent = node.sub;
+        const hasSub = node.sub && node.sub.trim();
+        if (hasSub) {
+          const subtitle = E('text', { x: '14', y: '7', 'font-size': '7.5', fill: 'rgba(255,255,255,0.4)' }, group);
+          subtitle.textContent = node.sub;
+        }
         const hasCost = node.cost && String(node.cost).trim();
         const hasTime = node.time && String(node.time).trim();
         if (hasCost || hasTime) {
           const parts = [];
           if (hasCost) parts.push(String(node.cost));
           if (hasTime) parts.push(`${node.time}mo`);
-          const metaEl = E('text', { x: '14', y: '18', 'font-size': '6.5', fill: 'rgba(255,255,255,0.26)' }, group);
+          const metaEl = E('text', { x: '14', y: hasSub ? '17' : '7', 'font-size': '6.5', fill: 'rgba(255,255,255,0.26)' }, group);
           metaEl.textContent = parts.join(' · ');
         }
         const dotGroup = mkDots(group, -13, -13, node.id, false);

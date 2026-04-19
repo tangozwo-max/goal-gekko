@@ -17,6 +17,10 @@
         <button class="tier-btn active" data-tier="balanced" title="Balanced · Sonnet">⚡⚡</button>
         <button class="tier-btn" data-tier="deep" title="Deep · Opus">⚡⚡⚡</button>
       </div>
+      <div style="display:flex;border:1px solid rgba(255,255,255,0.08);border-radius:5px;overflow:hidden;margin-right:2px;">
+        <button id="gekko-font-minus" title="Smaller text" style="background:transparent;border:none;color:rgba(255,255,255,0.35);font-size:9px;padding:2px 6px;cursor:pointer;font-family:inherit;line-height:1;">A−</button>
+        <button id="gekko-font-plus"  title="Larger text"  style="background:transparent;border:none;color:rgba(255,255,255,0.35);font-size:9px;padding:2px 6px;cursor:pointer;font-family:inherit;line-height:1;border-left:1px solid rgba(255,255,255,0.08);">A+</button>
+      </div>
       <button id="gekko-close" title="Close">✕</button>
     </div>
   </div>
@@ -67,7 +71,9 @@
     max-width: 640px;
     max-height: 88vh;
     z-index: 90;
-    background: rgba(4,7,18,0.96);
+    background: rgba(4,7,18,0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(255,255,255,0.13);
     border-radius: 10px;
     display: none;
@@ -95,11 +101,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 9px 11px;
-    border-bottom: 1px solid rgba(255,255,255,0.07);
+    padding: 8px 11px;
+    border-bottom: 1px solid rgba(255,255,255,0.10);
     flex-shrink: 0;
     cursor: grab;
-    background: rgba(255,255,255,0.02);
+    background: rgba(255,255,255,0.04);
+    user-select: none;
   }
   #gekko-hdr:active { cursor: grabbing; }
 
@@ -139,6 +146,7 @@
     scroll-behavior: smooth;
     min-height: 0;
     user-select: text;
+    --gecko-font: 11px;
   }
   #gekko-msgs::-webkit-scrollbar { width: 3px; }
   #gekko-msgs::-webkit-scrollbar-track { background: transparent; }
@@ -150,7 +158,7 @@
     background: rgba(30,96,186,0.88);
     border-radius: 8px 8px 2px 8px;
     padding: 5px 9px;
-    font-size: 9.5px;
+    font-size: var(--gecko-font, 11px);
     color: rgba(255,255,255,0.92);
     max-width: 82%;
     line-height: 1.55;
@@ -164,10 +172,10 @@
     max-width: 92%;
   }
   .msg-ai-bubble {
-    background: rgba(36,40,56,0.95);
+    background: rgba(36,40,56,0.80);
     border-radius: 2px 8px 8px 8px;
     padding: 5px 9px;
-    font-size: 9.5px;
+    font-size: var(--gecko-font, 11px);
     color: rgba(255,255,255,0.82);
     line-height: 1.65;
     white-space: pre-wrap;
@@ -184,7 +192,7 @@
 
   .msg-loading {
     align-self: flex-start;
-    font-size: 9.5px;
+    font-size: var(--gecko-font, 11px);
     color: rgba(255,255,255,0.28);
     padding: 4px 2px;
     letter-spacing: .04em;
@@ -216,7 +224,7 @@
   }
   .proposal-reason {
     color: rgba(255,255,255,0.38);
-    font-size: 9.5px;
+    font-size: var(--gecko-font, 11px);
     line-height: 1.5;
     margin-bottom: 6px;
   }
@@ -258,7 +266,7 @@
   }
   .proposal-discuss:hover { background: rgba(255,170,60,0.08); }
   .proposal-status {
-    font-size: 9.5px;
+    font-size: var(--gecko-font, 11px);
     letter-spacing: .05em;
     color: rgba(255,255,255,0.3);
     margin-top: 2px;
@@ -372,6 +380,15 @@
         btn.classList.add('active');
       });
     });
+
+    // ── font size A+/A- ──────────────────────────────────────────────────────
+    let msgFontSize = 11;
+    const setMsgFont = (px: number) => {
+      msgFontSize = Math.max(8, Math.min(18, px));
+      msgList.style.setProperty('--gecko-font', msgFontSize + 'px');
+    };
+    document.getElementById('gekko-font-plus') ?.addEventListener('click', () => setMsgFont(msgFontSize + 1));
+    document.getElementById('gekko-font-minus')?.addEventListener('click', () => setMsgFont(msgFontSize - 1));
 
     // ── drag to move ─────────────────────────────────────────────────────────
     let dragging = false;
