@@ -21,9 +21,12 @@
         <button id="gekko-font-minus" title="Smaller text" style="background:transparent;border:none;color:rgba(255,255,255,0.35);font-size:9px;padding:2px 6px;cursor:pointer;font-family:inherit;line-height:1;">A−</button>
         <button id="gekko-font-plus"  title="Larger text"  style="background:transparent;border:none;color:rgba(255,255,255,0.35);font-size:9px;padding:2px 6px;cursor:pointer;font-family:inherit;line-height:1;border-left:1px solid rgba(255,255,255,0.08);">A+</button>
       </div>
+      <button id="gekko-archive" title="Zusammenfassen &amp; archivieren" style="display:none;background:none;border:1px solid rgba(0,255,136,0.22);border-radius:4px;color:rgba(0,255,136,0.6);font-size:9px;padding:2px 6px;cursor:pointer;transition:background .15s,color .15s;font-family:inherit;line-height:1;white-space:nowrap;">⊙ Archiv</button>
       <button id="gekko-close" title="Close">✕</button>
     </div>
   </div>
+
+  <div id="gekko-memory-bar" style="display:none;flex-shrink:0;border-bottom:1px solid rgba(0,255,136,0.12);background:rgba(0,255,136,0.03);max-height:120px;overflow-y:auto;"></div>
 
   <div id="gekko-msgs"></div>
 
@@ -115,6 +118,10 @@
     line-height: 1;
   }
   #gekko-close:hover { color: rgba(255,255,255,0.75); }
+  #gekko-archive:hover { background: rgba(0,255,136,0.1); color: rgba(0,255,136,0.9); }
+  #gekko-archive:disabled { opacity: .38; cursor: default; }
+  #gekko-memory-bar::-webkit-scrollbar { width: 3px; }
+  #gekko-memory-bar::-webkit-scrollbar-thumb { background: rgba(0,255,136,0.15); border-radius: 3px; }
 
   #gekko-msgs {
     flex: 1;
@@ -370,6 +377,102 @@
     document.getElementById('gekko-font-plus') ?.addEventListener('click', () => setMsgFont(msgFontSize + 1));
     document.getElementById('gekko-font-minus')?.addEventListener('click', () => setMsgFont(msgFontSize - 1));
 
+    // ── chat memory (localStorage) ───────────────────────────────────────────
+    const MEMORY_KEY = 'gekko-chat-memory';
+    const archiveBtn  = document.getElementById('gekko-archive') as HTMLButtonElement | null;
+    const memoryBar   = document.getElementById('gekko-memory-bar') as HTMLElement | null;
+    let currentMemory: { summary: string; savedAt: string } | null = null;
+    let memoryInjected = false;
+
+    const loadMemory = () => {
+      try { const r = localStorage.getItem(MEMORY_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
+    };
+    const saveMemory = (summary: string) => {
+      const m = { summary, savedAt: new Date().toISOString() };
+      localStorage.setItem(MEMORY_KEY, JSON.stringify(m));
+      return m;
+    };
+
+    const showMemoryBanner = (mem: { summary: string; savedAt: string }) => {
+      if (!memoryBar) return;
+      const date = new Date(mem.savedAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      memoryBar.style.display = 'block';
+      memoryBar.innerHTML = '';
+      const header = document.createElement('div');
+      header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:5px 10px 3px;position:sticky;top:0;background:rgba(4,7,18,0.9);';
+      header.innerHTML = `<span style="font-size:7px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(0,255,136,0.45);">⊙ Was bisher geschah · ${date}</span>`;
+      const clearBtn = document.createElement('button');
+      clearBtn.textContent = '✕';
+      clearBtn.style.cssText = 'background:none;border:none;color:rgba(255,255,255,0.25);font-size:10px;cursor:pointer;padding:0 2px;line-height:1;font-family:inherit;';
+      clearBtn.title = 'Zusammenfassung löschen';
+      clearBtn.addEventListener('click', () => {
+        localStorage.removeItem(MEMORY_KEY);
+        memoryBar.style.display = 'none';
+        currentMemory = null;
+        memoryInjected = false;
+      });
+      header.appendChild(clearBtn);
+      memoryBar.appendChild(header);
+      const body = document.createElement('div');
+      body.style.cssText = 'padding:4px 10px 8px;font-size:9.5px;color:rgba(255,255,255,0.52);line-height:1.6;white-space:pre-wrap;';
+      body.textContent = mem.summary;
+      memoryBar.appendChild(body);
+    };
+
+    const updateArchiveBtn = () => {
+      if (!archiveBtn) return;
+      archiveBtn.style.display = convMessages.length >= 4 ? 'inline-flex' : 'none';
+    };
+
+    const summarizeAndArchive = async () => {
+      if (convMessages.length < 2 || isLoading) return;
+      isLoading = true;
+      if (archiveBtn) archiveBtn.disabled = true;
+      showLoading(true);
+      try {
+        const summaryMessages = [
+          ...convMessages,
+          { role: 'user', content: 'Bitte erstelle eine prägnante Sitzungszusammenfassung (max. 5 Stichpunkte, 150 Wörter): Hauptthemen, wichtige Erkenntnisse, empfohlene nächste Schritte. Antworte auf Deutsch.' },
+        ];
+        const boardState = (window as any).__gekkoBoardData?.();
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: summaryMessages, boardState, tier: 'fast' }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const summary = data.text?.trim() || 'Keine Zusammenfassung verfügbar.';
+        const mem = saveMemory(summary);
+        currentMemory = mem;
+        memoryInjected = false;
+        // Reset chat
+        convMessages.length = 0;
+        pendingToolResultIds = [];
+        if (msgList) msgList.innerHTML = '';
+        const trayElInner = document.getElementById('gekko-proposals') as HTMLElement | null;
+        if (trayElInner) trayElInner.style.display = 'none';
+        showMemoryBanner(mem);
+        const confirm = document.createElement('div');
+        confirm.className = 'msg-ai';
+        confirm.innerHTML = `<div class="msg-ai-bubble" style="border:1px solid rgba(0,255,136,0.18);background:rgba(0,255,136,0.04);color:rgba(255,255,255,0.65);">✓ Session archiviert. Neuer Chat — Zusammenfassung ist oben sichtbar.</div>`;
+        appendMsg(confirm);
+        updateArchiveBtn();
+      } catch (err: any) {
+        addAiMsg(`Fehler beim Archivieren: ${err?.message || 'unbekannt'}`, null);
+      } finally {
+        isLoading = false;
+        if (archiveBtn) archiveBtn.disabled = false;
+        showLoading(false);
+      }
+    };
+
+    archiveBtn?.addEventListener('click', summarizeAndArchive);
+
+    // Load memory on init
+    currentMemory = loadMemory();
+    if (currentMemory) showMemoryBanner(currentMemory);
+
     // ── drag to move ─────────────────────────────────────────────────────────
     let dragging = false;
     let dsx = 0, dsy = 0, dpx = 0, dpy = 0;
@@ -617,10 +720,12 @@
 
       try {
         const boardState = (window as any).__gekkoBoardData?.();
+        const memoryPayload = (!memoryInjected && currentMemory) ? currentMemory.summary : null;
+        if (memoryPayload) memoryInjected = true;
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: convMessages, boardState, tier: currentTier }),
+          body: JSON.stringify({ messages: convMessages, boardState, tier: currentTier, memory: memoryPayload }),
         });
 
         if (!res.ok) {
@@ -651,6 +756,7 @@
 
         addAiMsg(replyText, usage);
         if (proposals.length > 0) showProposalTray(proposals);
+        updateArchiveBtn();
       } catch (err: any) {
         addAiMsg(`Connection error: ${err?.message || 'unknown'}`, null);
       } finally {

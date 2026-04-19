@@ -127,9 +127,10 @@ export default async function handler(request) {
     return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
 
-  const { messages = [], boardState, tier = 'balanced' } = body;
+  const { messages = [], boardState, tier = 'balanced', memory } = body;
   const model = MODELS[tier] || MODELS.balanced;
-  const systemPrompt = SYSTEM + buildBoardContext(boardState);
+  const memCtx = memory ? `\n\n---\nPREVIOUS SESSION SUMMARY:\n${memory}\n---` : '';
+  const systemPrompt = SYSTEM + buildBoardContext(boardState) + memCtx;
 
   const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
