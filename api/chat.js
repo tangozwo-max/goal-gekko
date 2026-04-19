@@ -92,7 +92,12 @@ function buildBoardContext(boardState) {
   }
   if (stars.length) {
     lines.push('\nSteps:');
-    stars.forEach(n => lines.push(`  [${n.node_key}] ${n.title} · ${n.cat} (${n.subtitle || ''}) [${n.status || 'planned'}]${n.url ? ` → ${n.url}` : ''}`));
+    stars.forEach(n => {
+      const meta = [];
+      if (n.cost) meta.push(`cost: ${n.cost}`);
+      if (n.time_in_months) meta.push(`${n.time_in_months}mo`);
+      lines.push(`  [${n.node_key}] ${n.title} · ${n.cat} (${n.subtitle || ''}) [${n.status || 'planned'}]${meta.length ? ` [${meta.join(', ')}]` : ''}${n.url ? ` → ${n.url}` : ''}`);
+    });
   }
   if (Object.keys(edgesBy).length) {
     lines.push('\nConnections:');

@@ -1650,7 +1650,7 @@ const { fullscreen = true } = Astro.props;
       (window as any).__gekkoBoardData = () => ({
         nodes: [
           ...planets.map(p => ({ node_key: p.id, cat: 'destination', title: p.t1, subtitle: p.t2, detail: p.detail, status: 'planned' })),
-          ...nodes.map(n => ({ node_key: n.id, cat: n.cat, title: n.title, subtitle: n.sub, detail: n.detail, status: n.status, url: n.url })),
+          ...nodes.map(n => ({ node_key: n.id, cat: n.cat, title: n.title, subtitle: n.sub, detail: n.detail, status: n.status, url: n.url, cost: n.cost || '', time_in_months: n.time ? Number(n.time) : null })),
         ],
         edges: edges.map(e => ({ from_node: e.f, to_node: e.t })),
         meta: { ...boardMeta },
