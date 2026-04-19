@@ -292,6 +292,32 @@ const { fullscreen = true } = Astro.props;
     <input id="te-far" placeholder="Upper band label">
     <div class="pnl-btns"><button class="btn" data-action="saveTep">Save</button><button class="btn" data-action="closeTep">Cancel</button></div>
   </div>
+  <div id="ndp" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:150;width:340px;background:rgba(6,10,22,0.97);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:20px 20px 16px;box-shadow:0 24px 64px rgba(0,0,0,0.75);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+      <div style="flex:1;min-width:0;">
+        <div id="ndp-cat" style="font-size:7.5px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;margin-bottom:5px;"></div>
+        <div id="ndp-title" style="font-size:16px;font-weight:500;color:rgba(255,255,255,0.95);line-height:1.25;word-break:break-word;"></div>
+        <div id="ndp-sub" style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px;"></div>
+      </div>
+      <div style="display:flex;gap:5px;flex-shrink:0;margin-left:12px;padding-top:2px;">
+        <button id="ndp-edit" title="Edit" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;width:28px;height:28px;cursor:pointer;color:rgba(255,255,255,0.6);font-size:13px;line-height:1;padding:0;transition:background .15s,color .15s;" onmouseover="this.style.background='rgba(255,255,255,0.12)';this.style.color='rgba(255,255,255,0.95)'" onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.color='rgba(255,255,255,0.6)'">✎</button>
+        <div style="position:relative;">
+          <button id="ndp-dots" title="More actions" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;width:28px;height:28px;cursor:pointer;color:rgba(255,255,255,0.6);font-size:14px;line-height:1;padding:0;transition:background .15s,color .15s;" onmouseover="this.style.background='rgba(255,255,255,0.12)';this.style.color='rgba(255,255,255,0.95)'" onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.color='rgba(255,255,255,0.6)'">⋯</button>
+          <div id="ndp-dots-menu" style="display:none;position:absolute;top:32px;right:0;min-width:190px;background:rgba(6,10,22,0.98);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px;z-index:10;box-shadow:0 8px 24px rgba(0,0,0,0.6);">
+            <button id="ndp-connect" style="width:100%;text-align:left;background:none;border:none;border-radius:5px;padding:7px 10px;color:rgba(255,255,255,0.65);font-size:11px;cursor:pointer;font-family:inherit;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.95)'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,0.65)'">⟶&nbsp;&nbsp;Change connections</button>
+            <button id="ndp-dupe" style="width:100%;text-align:left;background:none;border:none;border-radius:5px;padding:7px 10px;color:rgba(255,255,255,0.65);font-size:11px;cursor:pointer;font-family:inherit;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.95)'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,0.65)'">⎘&nbsp;&nbsp;Duplicate</button>
+            <div style="height:1px;background:rgba(255,255,255,0.07);margin:4px 0;"></div>
+            <button id="ndp-del" style="width:100%;text-align:left;background:none;border:none;border-radius:5px;padding:7px 10px;color:#F0997B;font-size:11px;cursor:pointer;font-family:inherit;transition:background .12s;" onmouseover="this.style.background='rgba(240,153,123,0.08)'" onmouseout="this.style.background='none'">✕&nbsp;&nbsp;Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="ndp-detail" style="font-size:11px;color:rgba(255,255,255,0.52);line-height:1.65;margin-bottom:0;"></div>
+    <div id="ndp-meta" style="display:none;margin-top:10px;gap:14px;font-size:10px;color:rgba(255,255,255,0.38);"></div>
+    <a id="ndp-url" href="#" target="_blank" rel="noopener noreferrer" style="display:none;margin-top:10px;font-size:9.5px;color:rgba(92,167,232,0.75);text-decoration:none;letter-spacing:.02em;word-break:break-all;" onmouseover="this.style.color='rgba(92,167,232,1)'" onmouseout="this.style.color='rgba(92,167,232,0.75)'"></a>
+    <div id="ndp-status" style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:8px;align-items:center;"></div>
+  </div>
+  <div id="ndp-bg" style="display:none;position:fixed;inset:0;z-index:149;background:rgba(0,0,0,0.25);backdrop-filter:blur(2px);"></div>
   <div class="cvwrap">
     <svg id="cvg" viewBox="0 0 900 580" preserveAspectRatio="xMidYMid meet"></svg>
     <div id="tip"></div>
@@ -1098,9 +1124,12 @@ const { fullscreen = true } = Astro.props;
           const metaEl = E('text', { x: '14', y: hasSub ? '17' : '7', 'font-size': '6.5', fill: 'rgba(255,255,255,0.26)' }, group);
           metaEl.textContent = parts.join(' · ');
         }
-        const dotGroup = mkDots(group, -13, -13, node.id, false);
-        dotGroup.addEventListener('mousedown', (event) => { event.stopPropagation(); event.preventDefault(); });
-        dotGroup.addEventListener('click', (event) => { event.stopPropagation(); showSCtx(node.id, event.clientX, event.clientY); });
+        group.addEventListener('click', (event) => {
+          if (hDrag) return;
+          event.stopPropagation();
+          hTip(true);
+          openNdp(node.id);
+        });
         mkPlus(group, 0, 17, node.id, false);
         mkDock(group, 0, -17, node.id, 'star');
         group.addEventListener('mouseenter', () => {
@@ -1246,7 +1275,7 @@ const { fullscreen = true } = Astro.props;
         const viewportPoint = boardToViewport(sx, sy);
         let px = viewportPoint.x * sr.width + (sr.left - wr.left) + 18;
         let py = viewportPoint.y * sr.height + (sr.top - wr.top) - 8;
-        if (px + 308 > wr.width - 10) px -= 320;
+        if (px + 268 > wr.width - 10) px -= 275;
         if (py < 5) py = 5;
         tip.style.cssText = `display:block;position:absolute;z-index:30;width:220px;border-radius:10px;padding:10px 12px;pointer-events:all;border:1px solid ${color}4D;background:rgba(6,10,22,0.97);left:${px}px;top:${py}px;`;
         let pen = '';
@@ -1257,12 +1286,12 @@ const { fullscreen = true } = Astro.props;
         const safeDetail = detail ? detail.replace(/\n/g, '<br>') : '';
         const rawUrl = nid && nmap[nid]?.url ? nmap[nid].url : '';
         const safeUrl = rawUrl ? escHtml(rawUrl) : '';
-        const tipWidth = rawUrl ? 300 : 220;
+        const tipWidth = rawUrl ? 260 : 220;
         tip.style.width = `${tipWidth}px`;
         let domain = '';
         try { domain = new URL(rawUrl).hostname.replace(/^www\./, ''); } catch {}
         const faviconSrc = rawUrl ? `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(rawUrl)}&sz=64` : '';
-        tip.innerHTML = `<div style="position:relative;">${pen}<div style="font-size:8.5px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:${color};margin-bottom:4px;">${cls}</div><div style="font-size:12px;font-weight:500;color:rgba(255,255,255,0.95);margin-bottom:4px;">${escHtml(title)}</div>${safeDetail ? `<div style="font-size:10.5px;color:rgba(255,255,255,0.62);line-height:1.55;">${safeDetail}</div>` : ''}${rawUrl ? `<div class="tip-url-wrap" style="margin-top:10px;position:relative;width:100%;padding-top:56.25%;border-radius:7px;overflow:hidden;background:rgba(255,255,255,0.06);cursor:pointer;"><div class="tip-placeholder" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;"><img src="${faviconSrc}" style="width:22px;height:22px;border-radius:4px;display:block;" alt=""><span style="font-size:8.5px;color:rgba(255,255,255,0.4);letter-spacing:.02em;">${escHtml(domain)}</span><span style="font-size:7.5px;color:rgba(255,255,255,0.2);letter-spacing:.06em;">loading preview …</span></div><img class="tip-preview" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top left;display:block;opacity:0;transition:opacity .3s;" alt=""><span class="tip-open" style="display:none;position:absolute;bottom:0;left:0;right:0;padding:5px 8px;background:linear-gradient(0deg,rgba(0,0,0,0.6),transparent);font-size:8.5px;color:rgba(255,255,255,0.55);letter-spacing:.04em;border-radius:0 0 7px 7px;pointer-events:none;">click to open</span></div>` : ''}</div>`;
+        tip.innerHTML = `<div style="position:relative;">${pen}<div style="font-size:8.5px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:${color};margin-bottom:4px;">${cls}</div><div style="font-size:12px;font-weight:500;color:rgba(255,255,255,0.95);margin-bottom:4px;">${escHtml(title)}</div>${safeDetail ? `<div style="font-size:10.5px;color:rgba(255,255,255,0.62);line-height:1.55;">${safeDetail}</div>` : ''}${rawUrl ? `<div class="tip-url-wrap" style="margin-top:10px;position:relative;width:100%;padding-top:34%;border-radius:7px;overflow:hidden;background:rgba(255,255,255,0.06);cursor:pointer;"><div class="tip-placeholder" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;"><img src="${faviconSrc}" style="width:22px;height:22px;border-radius:4px;display:block;" alt=""><span style="font-size:8.5px;color:rgba(255,255,255,0.4);letter-spacing:.02em;">${escHtml(domain)}</span><span style="font-size:7.5px;color:rgba(255,255,255,0.2);letter-spacing:.06em;">loading preview …</span></div><img class="tip-preview" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top left;display:block;opacity:0;transition:opacity .3s;" alt=""><span class="tip-open" style="display:none;position:absolute;bottom:0;left:0;right:0;padding:5px 8px;background:linear-gradient(0deg,rgba(0,0,0,0.6),transparent);font-size:8.5px;color:rgba(255,255,255,0.55);letter-spacing:.04em;border-radius:0 0 7px 7px;pointer-events:none;">click to open</span></div>` : ''}</div>`;
         if (rawUrl) {
           const previewImg = tip.querySelector('.tip-preview');
           const urlWrap = tip.querySelector('.tip-url-wrap');
@@ -1348,6 +1377,84 @@ const { fullscreen = true } = Astro.props;
         ctx.innerHTML = '<div class="ci" data-action="doAS">✦&nbsp;&nbsp;Add star</div><div class="ci" data-action="doAT">◎&nbsp;&nbsp;Add target</div>';
         posCtx(cx, cy);
       };
+
+      let ndpId: string | null = null;
+      const ndp = container.querySelector<HTMLElement>('#ndp');
+      const ndpBg = container.querySelector<HTMLElement>('#ndp-bg');
+      const ndpDotsMenu = container.querySelector<HTMLElement>('#ndp-dots-menu');
+
+      const closeNdp = () => {
+        if (ndp) ndp.style.display = 'none';
+        if (ndpBg) ndpBg.style.display = 'none';
+        if (ndpDotsMenu) ndpDotsMenu.style.display = 'none';
+        ndpId = null;
+      };
+
+      const openNdp = (id: string) => {
+        const node = nmap[id];
+        if (!node) return;
+        ndpId = id;
+        const catKey = normalizeCategory(node.cat);
+        const cat = CATS[catKey] || CATS.job;
+        const statusKey = normalizeStatus(node.status);
+        const statusLabels: Record<string,string> = { planned: 'Planned', ongoing: 'Active', done: 'Done' };
+        const statusColors: Record<string,string> = { planned: 'rgba(157,163,184,0.75)', ongoing: 'rgba(100,160,220,0.85)', done: 'rgba(64,185,120,0.85)' };
+
+        const catEl = container.querySelector<HTMLElement>('#ndp-cat');
+        const titleEl = container.querySelector<HTMLElement>('#ndp-title');
+        const subEl = container.querySelector<HTMLElement>('#ndp-sub');
+        const detailEl = container.querySelector<HTMLElement>('#ndp-detail');
+        const metaEl = container.querySelector<HTMLElement>('#ndp-meta');
+        const urlEl = container.querySelector<HTMLAnchorElement>('#ndp-url');
+        const statusEl = container.querySelector<HTMLElement>('#ndp-status');
+        if (catEl) { catEl.textContent = cat.l; catEl.style.color = cat.c; }
+        if (titleEl) titleEl.textContent = node.title || '';
+        if (subEl) { subEl.textContent = node.sub || ''; subEl.style.display = node.sub ? 'block' : 'none'; }
+        if (detailEl) { detailEl.innerHTML = node.detail ? node.detail.replace(/\n/g,'<br>') : ''; detailEl.style.display = node.detail ? 'block' : 'none'; }
+        if (metaEl) {
+          const parts: string[] = [];
+          if (node.cost) parts.push(`💰 ${node.cost}`);
+          if (node.time) parts.push(`⏱ ${node.time} months`);
+          metaEl.style.display = parts.length ? 'flex' : 'none';
+          metaEl.textContent = parts.join('  ·  ');
+        }
+        if (urlEl) {
+          if (node.url) { urlEl.href = node.url; urlEl.textContent = node.url; urlEl.style.display = 'block'; }
+          else { urlEl.style.display = 'none'; }
+        }
+        if (statusEl) {
+          statusEl.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${statusColors[statusKey] || statusColors.planned};display:inline-block;flex-shrink:0;"></span><span style="font-size:9.5px;color:rgba(255,255,255,0.35);letter-spacing:.06em;">${statusLabels[statusKey] || 'Planned'}</span>`;
+        }
+        if (ndpDotsMenu) ndpDotsMenu.style.display = 'none';
+        if (ndp) ndp.style.display = 'block';
+        if (ndpBg) ndpBg.style.display = 'block';
+      };
+
+      container.querySelector('#ndp-bg')?.addEventListener('click', closeNdp);
+      container.querySelector('#ndp-edit')?.addEventListener('click', () => {
+        const id = ndpId;
+        closeNdp();
+        if (id) openSep(id);
+      });
+      container.querySelector('#ndp-dots')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (ndpDotsMenu) ndpDotsMenu.style.display = ndpDotsMenu.style.display === 'none' ? 'block' : 'none';
+      });
+      container.querySelector('#ndp-connect')?.addEventListener('click', () => {
+        const id = ndpId;
+        closeNdp();
+        if (id) enterConn(id);
+      });
+      container.querySelector('#ndp-dupe')?.addEventListener('click', () => {
+        const id = ndpId;
+        closeNdp();
+        if (id) dupN(id);
+      });
+      container.querySelector('#ndp-del')?.addEventListener('click', () => {
+        const id = ndpId;
+        closeNdp();
+        if (id) delN(id);
+      });
 
       phr.addEventListener('mouseenter', () => {
         if (!mode) sTip('#378ADD', 'Starting point', boardMeta.homeTitle, boardMeta.homeDetail, 450, 495, 'home', null);
