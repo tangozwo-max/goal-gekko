@@ -160,7 +160,7 @@ const { fullscreen = true } = Astro.props;
     <a id="privacy-link" href="#" style="font-size:9px;color:rgba(255,255,255,0.22);text-decoration:none;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Datenschutz</a>
     <button id="impressum-link" type="button" data-impressum-trigger style="font-size:9px;color:rgba(255,255,255,0.22);background:none;border:none;padding:0;cursor:pointer;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Impressum</button>
   </div>
-  <span style="font-size:7.5px;color:rgba(255,255,255,0.18);letter-spacing:.05em;font-family:inherit;align-self:flex-end;">v0.024</span>
+  <span style="font-size:7.5px;color:rgba(255,255,255,0.18);letter-spacing:.05em;font-family:inherit;align-self:flex-end;">v0.025</span>
 </div>
 <div style="position:fixed;top:20px;right:20px;z-index:50;display:flex;gap:8px;align-items:center;">
   <button id="ai-chat-btn" title="Chat with Gecko AI" style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.28);border-radius:50%;width:29px;height:29px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:0.85;transition:opacity .2s,border-color .2s,background .2s;" onmouseover="this.style.opacity='1';this.style.borderColor='rgba(0,255,136,0.7)';this.style.background='rgba(0,255,136,0.15)'" onmouseout="this.style.opacity='0.85';this.style.borderColor='rgba(0,255,136,0.28)';this.style.background='rgba(0,255,136,0.08)'" onclick="var t=document.getElementById('gekko-toggle');if(t)t.click()"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 2 L11.6 8.4 L18 10 L11.6 11.6 L10 18 L8.4 11.6 L2 10 L8.4 8.4 Z" fill="#00FF88"/><circle cx="16.5" cy="3.5" r="1.4" fill="#00FF88" opacity="0.6"/><circle cx="4" cy="16" r="1" fill="#00FF88" opacity="0.45"/></svg></button>
@@ -1282,12 +1282,14 @@ const { fullscreen = true } = Astro.props;
         let py = viewportPoint.y * sr.height + (sr.top - wr.top) - 8;
         if (px + 248 > wr.width - 10) px -= 255;
         if (py < 5) py = 5;
-        tip.style.cssText = `display:block;position:absolute;z-index:30;width:240px;border-radius:10px;padding:10px 12px;pointer-events:all;border:1px solid ${color}4D;background:rgba(6,10,22,0.97);left:${px}px;top:${py}px;`;
+        tip.style.cssText = `display:block;position:absolute;z-index:30;width:240px;border-radius:10px;padding:10px 12px;pointer-events:all;border:1px solid ${color}4D;background:rgba(6,10,22,0.97);left:${px}px;top:${py}px;${nid ? 'cursor:pointer;' : ''}`;
         const safeDetail = detail ? detail.replace(/\n/g, '<br>') : '';
-        tip.innerHTML = `<div style="position:relative;"><div style="font-size:8.5px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:${color};margin-bottom:4px;">${cls}</div><div style="font-size:12px;font-weight:500;color:rgba(255,255,255,0.95);margin-bottom:4px;">${escHtml(title)}</div>${safeDetail ? `<div style="font-size:10.5px;color:rgba(255,255,255,0.62);line-height:1.55;">${safeDetail}</div>` : ''}</div>`;
+        tip.innerHTML = `<div style="position:relative;"><div style="font-size:8.5px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:${color};margin-bottom:4px;">${cls}</div><div style="font-size:12px;font-weight:500;color:rgba(255,255,255,0.95);margin-bottom:4px;">${escHtml(title)}</div>${safeDetail ? `<div style="font-size:10.5px;color:rgba(255,255,255,0.62);line-height:1.55;">${safeDetail}</div>` : ''}${nid ? `<div style="margin-top:7px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.06);font-size:8px;color:rgba(255,255,255,0.22);letter-spacing:.05em;">KLICKEN FÜR DETAILS</div>` : ''}</div>`;
+        tip.onclick = nid ? () => { hTip(true); openNdp(nid, 'star'); } : null;
         const nodeUrl = url || null;
         if (urlPrev) {
           urlPrev.style.display = 'none';
+          urlPrev.onclick = null;
           if (nodeUrl) {
             let domain = '';
             try { domain = new URL(nodeUrl).hostname.replace(/^www\./, ''); } catch {}
@@ -1299,9 +1301,10 @@ const { fullscreen = true } = Astro.props;
             if (upx < 8) upx = starVpX + 270;
             if (upy < 8) upy = 8;
             if (upy + 220 > window.innerHeight) upy = window.innerHeight - 228;
-            urlPrev.style.cssText = `display:none;position:fixed;z-index:60;width:${urlBoxW}px;border-radius:10px;overflow:hidden;pointer-events:none;border:1px solid rgba(92,167,232,0.18);background:rgba(6,10,22,0.97);backdrop-filter:blur(10px);left:${upx}px;top:${upy}px;`;
+            urlPrev.style.cssText = `display:none;position:fixed;z-index:60;width:${urlBoxW}px;border-radius:10px;overflow:hidden;pointer-events:all;cursor:pointer;border:1px solid rgba(92,167,232,0.18);background:rgba(6,10,22,0.97);backdrop-filter:blur(10px);left:${upx}px;top:${upy}px;`;
+            urlPrev.onclick = () => { window.open(nodeUrl, '_blank', 'noopener'); hTip(true); };
             const ssUrl = `https://s.wordpress.com/mshots/v1/${encodeURIComponent(nodeUrl)}?w=580`;
-            urlPrev.innerHTML = `<div style="background:rgba(255,255,255,0.04);padding:5px 9px;display:flex;align-items:center;gap:6px;border-bottom:1px solid rgba(255,255,255,0.06);"><div style="display:flex;gap:3px;flex-shrink:0;"><span style="width:7px;height:7px;border-radius:50%;background:#ff5f57;display:inline-block;"></span><span style="width:7px;height:7px;border-radius:50%;background:#febc2e;display:inline-block;"></span><span style="width:7px;height:7px;border-radius:50%;background:#28c840;display:inline-block;"></span></div><div style="flex:1;min-width:0;background:rgba(255,255,255,0.07);border-radius:4px;padding:2px 7px;font-size:8px;color:rgba(255,255,255,0.35);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(domain)}</div></div><img class="up-ss" src="${ssUrl}" style="width:100%;display:block;max-height:164px;object-fit:cover;object-position:top;"><div style="padding:9px 12px;border-top:1px solid rgba(255,255,255,0.06);"><div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;"><img src="https://www.google.com/s2/favicons?domain=${escHtml(domain)}&sz=20" width="18" height="18" style="border-radius:3px;flex-shrink:0;opacity:0.85;" onerror="this.style.display='none'"><span style="font-size:11px;font-weight:500;color:rgba(255,255,255,0.82);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(domain)}</span></div><div style="font-size:9px;color:rgba(92,167,232,0.6);word-break:break-all;line-height:1.5;">${escHtml(nodeUrl.length > 60 ? nodeUrl.slice(0, 60) + '\u2026' : nodeUrl)}</div></div>`;
+            urlPrev.innerHTML = `<div style="background:rgba(255,255,255,0.04);padding:5px 9px;display:flex;align-items:center;gap:6px;border-bottom:1px solid rgba(255,255,255,0.06);"><div style="display:flex;gap:3px;flex-shrink:0;"><span style="width:7px;height:7px;border-radius:50%;background:#ff5f57;display:inline-block;"></span><span style="width:7px;height:7px;border-radius:50%;background:#febc2e;display:inline-block;"></span><span style="width:7px;height:7px;border-radius:50%;background:#28c840;display:inline-block;"></span></div><div style="flex:1;min-width:0;background:rgba(255,255,255,0.07);border-radius:4px;padding:2px 7px;font-size:8px;color:rgba(255,255,255,0.35);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(domain)}</div></div><img class="up-ss" src="${ssUrl}" style="width:100%;display:block;max-height:164px;object-fit:cover;object-position:top;"><div style="padding:9px 12px;border-top:1px solid rgba(255,255,255,0.06);"><div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;"><img src="https://www.google.com/s2/favicons?domain=${escHtml(domain)}&sz=20" width="18" height="18" style="border-radius:3px;flex-shrink:0;opacity:0.85;" onerror="this.style.display='none'"><span style="font-size:11px;font-weight:500;color:rgba(255,255,255,0.82);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(domain)}</span></div><div style="font-size:9px;color:rgba(92,167,232,0.6);word-break:break-all;line-height:1.5;">${escHtml(nodeUrl.length > 60 ? nodeUrl.slice(0, 60) + '\u2026' : nodeUrl)}</div><div style="margin-top:7px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05);font-size:8px;color:rgba(255,255,255,0.22);letter-spacing:.05em;">KLICKEN ZUM ÖFFNEN ↗</div></div>`;
             const ssImg = urlPrev.querySelector('.up-ss') as HTMLImageElement | null;
             if (ssImg) { ssImg.onload = () => { urlPrev.style.display = 'block'; }; }
           }
@@ -1325,9 +1328,13 @@ const { fullscreen = true } = Astro.props;
         if (ht) clearTimeout(ht);
       });
       tip.addEventListener('mouseleave', sHide);
+      if (urlPrev) {
+        urlPrev.addEventListener('mouseenter', () => { if (ht) clearTimeout(ht); });
+        urlPrev.addEventListener('mouseleave', sHide);
+      }
       // Hide tooltip before any click fires, so it never intercepts node clicks
       document.addEventListener('pointerdown', (e) => {
-        if (!tip.contains(e.target as Node)) hTip(true);
+        if (!tip.contains(e.target as Node) && !urlPrev?.contains(e.target as Node)) hTip(true);
       }, { capture: true });
 
       const posCtx = (cx, cy) => {
