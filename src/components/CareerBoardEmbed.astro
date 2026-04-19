@@ -1073,9 +1073,12 @@ const { fullscreen = true } = Astro.props;
         });
         E('circle', { cx: '0', cy: '0', r: String(planet.r + 6), fill: 'none', stroke: PLANET_STYLE.atmosphere, 'stroke-width': '2.5', opacity: '0', id: `pr-${planet.id}` }, group);
         const dc = Math.round(planet.r * 0.7);
-        const dotGroup = mkDots(group, dc, -dc, planet.id, true);
-        dotGroup.addEventListener('mousedown', (event) => { event.stopPropagation(); event.preventDefault(); });
-        dotGroup.addEventListener('click', (event) => { event.stopPropagation(); showPCtx(planet.id, event.clientX, event.clientY); });
+        group.addEventListener('mousedown', () => { hTip(true); });
+        group.addEventListener('click', (event) => {
+          if (hDrag) return;
+          event.stopPropagation();
+          openNdp(planet.id, 'planet');
+        });
         mkPlus(group, 0, planet.r + 14, planet.id, true);
         mkDock(group, 0, planet.r - 16, planet.id, 'planet');
         group.addEventListener('mouseenter', () => {
@@ -1124,11 +1127,11 @@ const { fullscreen = true } = Astro.props;
           const metaEl = E('text', { x: '14', y: hasSub ? '17' : '7', 'font-size': '6.5', fill: 'rgba(255,255,255,0.26)' }, group);
           metaEl.textContent = parts.join(' · ');
         }
+        group.addEventListener('mousedown', () => { hTip(true); });
         group.addEventListener('click', (event) => {
           if (hDrag) return;
           event.stopPropagation();
-          hTip(true);
-          openNdp(node.id);
+          openNdp(node.id, 'star');
         });
         mkPlus(group, 0, 17, node.id, false);
         mkDock(group, 0, -17, node.id, 'star');
@@ -1379,6 +1382,7 @@ const { fullscreen = true } = Astro.props;
       };
 
       let ndpId: string | null = null;
+      let ndpType: 'star' | 'planet' = 'star';
       const ndp = container.querySelector<HTMLElement>('#ndp');
       const ndpBg = container.querySelector<HTMLElement>('#ndp-bg');
       const ndpDotsMenu = container.querySelector<HTMLElement>('#ndp-dots-menu');
@@ -1390,41 +1394,53 @@ const { fullscreen = true } = Astro.props;
         ndpId = null;
       };
 
-      const openNdp = (id: string) => {
-        const node = nmap[id];
-        if (!node) return;
+      const openNdp = (id: string, type: 'star' | 'planet' = 'star') => {
         ndpId = id;
-        const catKey = normalizeCategory(node.cat);
-        const cat = CATS[catKey] || CATS.job;
-        const statusKey = normalizeStatus(node.status);
-        const statusLabels: Record<string,string> = { planned: 'Planned', ongoing: 'Active', done: 'Done' };
-        const statusColors: Record<string,string> = { planned: 'rgba(157,163,184,0.75)', ongoing: 'rgba(100,160,220,0.85)', done: 'rgba(64,185,120,0.85)' };
-
-        const catEl = container.querySelector<HTMLElement>('#ndp-cat');
-        const titleEl = container.querySelector<HTMLElement>('#ndp-title');
-        const subEl = container.querySelector<HTMLElement>('#ndp-sub');
+        ndpType = type;
+        const catEl    = container.querySelector<HTMLElement>('#ndp-cat');
+        const titleEl  = container.querySelector<HTMLElement>('#ndp-title');
+        const subEl    = container.querySelector<HTMLElement>('#ndp-sub');
         const detailEl = container.querySelector<HTMLElement>('#ndp-detail');
-        const metaEl = container.querySelector<HTMLElement>('#ndp-meta');
-        const urlEl = container.querySelector<HTMLAnchorElement>('#ndp-url');
+        const metaEl   = container.querySelector<HTMLElement>('#ndp-meta');
+        const urlEl    = container.querySelector<HTMLAnchorElement>('#ndp-url');
         const statusEl = container.querySelector<HTMLElement>('#ndp-status');
-        if (catEl) { catEl.textContent = cat.l; catEl.style.color = cat.c; }
-        if (titleEl) titleEl.textContent = node.title || '';
-        if (subEl) { subEl.textContent = node.sub || ''; subEl.style.display = node.sub ? 'block' : 'none'; }
-        if (detailEl) { detailEl.innerHTML = node.detail ? node.detail.replace(/\n/g,'<br>') : ''; detailEl.style.display = node.detail ? 'block' : 'none'; }
-        if (metaEl) {
-          const parts: string[] = [];
-          if (node.cost) parts.push(`💰 ${node.cost}`);
-          if (node.time) parts.push(`⏱ ${node.time} months`);
-          metaEl.style.display = parts.length ? 'flex' : 'none';
-          metaEl.textContent = parts.join('  ·  ');
+        const dupeBtn  = container.querySelector<HTMLElement>('#ndp-dupe');
+
+        if (type === 'planet') {
+          const planet = pmap[id];
+          if (!planet) return;
+          if (catEl)    { catEl.textContent = 'Destination'; catEl.style.color = 'rgba(92,174,255,0.85)'; }
+          if (titleEl)  titleEl.textContent = planet.t1 || '';
+          if (subEl)    { subEl.textContent = planet.t2 || ''; subEl.style.display = planet.t2 ? 'block' : 'none'; }
+          if (detailEl) { detailEl.innerHTML = planet.detail ? planet.detail.replace(/\n/g,'<br>') : ''; detailEl.style.display = planet.detail ? 'block' : 'none'; }
+          if (metaEl)   metaEl.style.display = 'none';
+          if (urlEl)    urlEl.style.display = 'none';
+          if (statusEl) statusEl.style.display = 'none';
+          if (dupeBtn)  dupeBtn.style.display = 'none';
+        } else {
+          const node = nmap[id];
+          if (!node) return;
+          const catKey = normalizeCategory(node.cat);
+          const cat = CATS[catKey] || CATS.job;
+          const statusKey = normalizeStatus(node.status);
+          const statusLabels: Record<string,string> = { planned: 'Planned', ongoing: 'Active', done: 'Done' };
+          const statusColors: Record<string,string> = { planned: 'rgba(157,163,184,0.75)', ongoing: 'rgba(100,160,220,0.85)', done: 'rgba(64,185,120,0.85)' };
+          if (catEl)    { catEl.textContent = cat.l; catEl.style.color = cat.c; }
+          if (titleEl)  titleEl.textContent = node.title || '';
+          if (subEl)    { subEl.textContent = node.sub || ''; subEl.style.display = node.sub ? 'block' : 'none'; }
+          if (detailEl) { detailEl.innerHTML = node.detail ? node.detail.replace(/\n/g,'<br>') : ''; detailEl.style.display = node.detail ? 'block' : 'none'; }
+          if (metaEl) {
+            const parts: string[] = [];
+            if (node.cost) parts.push(`${node.cost}`);
+            if (node.time) parts.push(`${node.time} months`);
+            metaEl.style.display = parts.length ? 'flex' : 'none';
+            metaEl.textContent = parts.join('  ·  ');
+          }
+          if (urlEl) { if (node.url) { urlEl.href = node.url; urlEl.textContent = node.url; urlEl.style.display = 'block'; } else { urlEl.style.display = 'none'; } }
+          if (statusEl) { statusEl.style.display = 'flex'; statusEl.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${statusColors[statusKey]};display:inline-block;flex-shrink:0;"></span><span style="font-size:9.5px;color:rgba(255,255,255,0.35);letter-spacing:.06em;">${statusLabels[statusKey]}</span>`; }
+          if (dupeBtn)  dupeBtn.style.display = 'block';
         }
-        if (urlEl) {
-          if (node.url) { urlEl.href = node.url; urlEl.textContent = node.url; urlEl.style.display = 'block'; }
-          else { urlEl.style.display = 'none'; }
-        }
-        if (statusEl) {
-          statusEl.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${statusColors[statusKey] || statusColors.planned};display:inline-block;flex-shrink:0;"></span><span style="font-size:9.5px;color:rgba(255,255,255,0.35);letter-spacing:.06em;">${statusLabels[statusKey] || 'Planned'}</span>`;
-        }
+
         if (ndpDotsMenu) ndpDotsMenu.style.display = 'none';
         if (ndp) ndp.style.display = 'block';
         if (ndpBg) ndpBg.style.display = 'block';
@@ -1432,9 +1448,9 @@ const { fullscreen = true } = Astro.props;
 
       container.querySelector('#ndp-bg')?.addEventListener('click', closeNdp);
       container.querySelector('#ndp-edit')?.addEventListener('click', () => {
-        const id = ndpId;
+        const id = ndpId; const t = ndpType;
         closeNdp();
-        if (id) openSep(id);
+        if (id) { if (t === 'planet') openPep(id, 'edit'); else openSep(id); }
       });
       container.querySelector('#ndp-dots')?.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1451,9 +1467,9 @@ const { fullscreen = true } = Astro.props;
         if (id) dupN(id);
       });
       container.querySelector('#ndp-del')?.addEventListener('click', () => {
-        const id = ndpId;
+        const id = ndpId; const t = ndpType;
         closeNdp();
-        if (id) delN(id);
+        if (id) { if (t === 'planet') delP(id); else delN(id); }
       });
 
       phr.addEventListener('mouseenter', () => {
