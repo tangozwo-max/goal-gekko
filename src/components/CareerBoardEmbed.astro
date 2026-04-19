@@ -1278,52 +1278,11 @@ const { fullscreen = true } = Astro.props;
         const viewportPoint = boardToViewport(sx, sy);
         let px = viewportPoint.x * sr.width + (sr.left - wr.left) + 18;
         let py = viewportPoint.y * sr.height + (sr.top - wr.top) - 8;
-        if (px + 268 > wr.width - 10) px -= 275;
+        if (px + 228 > wr.width - 10) px -= 235;
         if (py < 5) py = 5;
         tip.style.cssText = `display:block;position:absolute;z-index:30;width:220px;border-radius:10px;padding:10px 12px;pointer-events:all;border:1px solid ${color}4D;background:rgba(6,10,22,0.97);left:${px}px;top:${py}px;`;
-        let pen = '';
-        if (nid === 'home') pen = '<span class="tip-e" data-action="etip" data-eid="home" data-etype="h">✎</span>';
-        else if (nid && nid.startsWith('timeline-')) pen = `<span class="tip-e" data-action="etip" data-eid="${nid}" data-etype="t">✎</span>`;
-        else if (nid) pen = `<span class="tip-e" data-action="etip" data-eid="${nid}" data-etype="s">✎</span>`;
-        else if (pid) pen = `<span class="tip-e" data-action="etip" data-eid="${pid}" data-etype="p">✎</span>`;
         const safeDetail = detail ? detail.replace(/\n/g, '<br>') : '';
-        const rawUrl = nid && nmap[nid]?.url ? nmap[nid].url : '';
-        const safeUrl = rawUrl ? escHtml(rawUrl) : '';
-        const tipWidth = rawUrl ? 260 : 220;
-        tip.style.width = `${tipWidth}px`;
-        let domain = '';
-        try { domain = new URL(rawUrl).hostname.replace(/^www\./, ''); } catch {}
-        const faviconSrc = rawUrl ? `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(rawUrl)}&sz=64` : '';
-        tip.innerHTML = `<div style="position:relative;">${pen}<div style="font-size:8.5px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:${color};margin-bottom:4px;">${cls}</div><div style="font-size:12px;font-weight:500;color:rgba(255,255,255,0.95);margin-bottom:4px;">${escHtml(title)}</div>${safeDetail ? `<div style="font-size:10.5px;color:rgba(255,255,255,0.62);line-height:1.55;">${safeDetail}</div>` : ''}${rawUrl ? `<div class="tip-url-wrap" style="margin-top:10px;position:relative;width:100%;padding-top:34%;border-radius:7px;overflow:hidden;background:rgba(255,255,255,0.06);cursor:pointer;"><div class="tip-placeholder" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;"><img src="${faviconSrc}" style="width:22px;height:22px;border-radius:4px;display:block;" alt=""><span style="font-size:8.5px;color:rgba(255,255,255,0.4);letter-spacing:.02em;">${escHtml(domain)}</span><span style="font-size:7.5px;color:rgba(255,255,255,0.2);letter-spacing:.06em;">loading preview …</span></div><img class="tip-preview" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top left;display:block;opacity:0;transition:opacity .3s;" alt=""><span class="tip-open" style="display:none;position:absolute;bottom:0;left:0;right:0;padding:5px 8px;background:linear-gradient(0deg,rgba(0,0,0,0.6),transparent);font-size:8.5px;color:rgba(255,255,255,0.55);letter-spacing:.04em;border-radius:0 0 7px 7px;pointer-events:none;">click to open</span></div>` : ''}</div>`;
-        if (rawUrl) {
-          const previewImg = tip.querySelector('.tip-preview');
-          const urlWrap = tip.querySelector('.tip-url-wrap');
-          const placeholder = tip.querySelector('.tip-placeholder');
-          const openLabel = tip.querySelector('.tip-open');
-          if (previewImg && urlWrap) {
-            previewImg.src = `https://image.thum.io/get/width/600/viewportWidth/1280/crop/338/${rawUrl}`;
-            previewImg.onload = () => {
-              previewImg.style.opacity = '1';
-              if (placeholder) placeholder.remove();
-              if (openLabel) openLabel.style.display = 'block';
-            };
-            previewImg.onerror = () => {
-              previewImg.remove();
-              if (placeholder) {
-                placeholder.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:auto;';
-                const link = document.createElement('a');
-                link.href = safeUrl;
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-                link.textContent = 'WEBLINK';
-                link.style.cssText = 'color:#5BA7E8;font-weight:700;letter-spacing:.12em;font-size:10px;text-decoration:underline;';
-                link.onclick = (e) => e.stopPropagation();
-                placeholder.replaceChildren(link);
-              }
-            };
-            urlWrap.style.cursor = 'default';
-          }
-        }
+        tip.innerHTML = `<div style="position:relative;"><div style="font-size:8.5px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:${color};margin-bottom:4px;">${cls}</div><div style="font-size:12px;font-weight:500;color:rgba(255,255,255,0.95);margin-bottom:4px;">${escHtml(title)}</div>${safeDetail ? `<div style="font-size:10.5px;color:rgba(255,255,255,0.62);line-height:1.55;">${safeDetail}</div>` : ''}</div>`;
       };
 
       function sHide() {
