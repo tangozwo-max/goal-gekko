@@ -1447,6 +1447,8 @@ const { fullscreen = true } = Astro.props;
       };
 
       container.querySelector('#ndp-bg')?.addEventListener('click', closeNdp);
+      container.querySelector('#ndp-url')?.addEventListener('click', (e) => { e.stopPropagation(); });
+      container.querySelector('#ndp')?.addEventListener('click', (e) => { e.stopPropagation(); });
       container.querySelector('#ndp-edit')?.addEventListener('click', () => {
         const id = ndpId; const t = ndpType;
         closeNdp();
