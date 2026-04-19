@@ -124,7 +124,7 @@ const { fullscreen = true } = Astro.props;
       showBoard();
     };
 
-    const renderBoard = ({ container, boardId, userId, initialNodes, initialEdges, initialMeta, db, persistenceMode, storageKey, notice, showResetBtn = false }) => {
+    const renderBoard = ({ container, boardId, userId, initialNodes, initialEdges, initialMeta, db, persistenceMode, storageKey, notice, showResetBtn = false, isAdmin = false }) => {
       const noticeMarkup = notice
         ? `<div class="pnl" style="display:block;"><div style="font-size:12px;color:#e5e7eb;"><strong>Local mode.</strong> ${notice}</div></div>`
         : '';
@@ -155,21 +155,27 @@ const { fullscreen = true } = Astro.props;
 </div>` : '';
 
       const fixedControlsMarkup = showResetBtn ? `
-<div style="position:fixed;bottom:18px;right:22px;display:flex;align-items:flex-end;gap:10px;z-index:60;pointer-events:auto;">
-  <a id="privacy-link" href="#" style="font-size:9px;color:rgba(255,255,255,0.22);text-decoration:none;transition:color .2s, transform .2s;letter-spacing:.04em;transform:translateY(-10px);" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Datenschutz</a>
-  <button id="impressum-link" type="button" data-impressum-trigger style="font-size:9px;color:rgba(255,255,255,0.22);background:none;border:none;padding:0;cursor:pointer;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Impressum</button>
+<div style="position:fixed;bottom:14px;right:18px;display:flex;align-items:flex-end;gap:14px;z-index:60;pointer-events:auto;">
+  <div style="display:flex;gap:10px;align-items:flex-end;">
+    <a id="privacy-link" href="#" style="font-size:9px;color:rgba(255,255,255,0.22);text-decoration:none;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Datenschutz</a>
+    <button id="impressum-link" type="button" data-impressum-trigger style="font-size:9px;color:rgba(255,255,255,0.22);background:none;border:none;padding:0;cursor:pointer;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Impressum</button>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+    <img src="/images/goal_gekko.gif" alt="Goal-Gekko" style="width:30px;height:30px;object-fit:contain;opacity:0.38;display:block;">
+    <span style="font-size:7.5px;color:rgba(255,255,255,0.18);letter-spacing:.05em;font-family:inherit;">v0.011</span>
+  </div>
 </div>
 <div style="position:fixed;top:20px;right:20px;z-index:50;display:flex;gap:8px;align-items:center;">
   <button id="help-btn" title="How it works" style="background:none;border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:29px;height:29px;cursor:pointer;color:rgba(255,255,255,0.30);font-size:14px;font-weight:600;line-height:1;padding:0;opacity:0.7;transition:opacity .2s,color .2s,border-color .2s;" onmouseover="this.style.opacity='1';this.style.color='rgba(255,255,255,0.72)';this.style.borderColor='rgba(255,255,255,0.32)'" onmouseout="this.style.opacity='0.7';this.style.color='rgba(255,255,255,0.30)';this.style.borderColor='rgba(255,255,255,0.12)'">?</button>
   <button id="clear-btn" title="Board leeren" style="background:none;border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:29px;height:29px;cursor:pointer;color:rgba(255,255,255,0.30);font-size:14px;line-height:1;padding:0;opacity:0.7;transition:opacity .2s,color .2s,border-color .2s;" onmouseover="this.style.opacity='1';this.style.color='rgba(255,255,255,0.72)';this.style.borderColor='rgba(255,255,255,0.32)'" onmouseout="this.style.opacity='0.7';this.style.color='rgba(255,255,255,0.30)';this.style.borderColor='rgba(255,255,255,0.12)'">⊘</button>
   <button id="reset-btn" title="Board zurücksetzen" style="background:none;border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:29px;height:29px;cursor:pointer;color:rgba(255,255,255,0.30);font-size:16px;line-height:1;padding:0;opacity:0.7;transition:opacity .2s,color .2s,border-color .2s;" onmouseover="this.style.opacity='1';this.style.color='rgba(255,255,255,0.72)';this.style.borderColor='rgba(255,255,255,0.32)'" onmouseout="this.style.opacity='0.7';this.style.color='rgba(255,255,255,0.30)';this.style.borderColor='rgba(255,255,255,0.12)'">↺</button>
-  <div style="position:relative;">
+  ${isAdmin ? `<div style="position:relative;">
     <button id="settings-btn" title="Settings" style="background:none;border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:29px;height:29px;cursor:pointer;color:rgba(255,255,255,0.30);font-size:14px;line-height:1;padding:0;opacity:0.7;transition:opacity .2s,color .2s,border-color .2s;" onmouseover="this.style.opacity='1';this.style.color='rgba(255,255,255,0.72)';this.style.borderColor='rgba(255,255,255,0.32)'" onmouseout="this.style.opacity='0.7';this.style.color='rgba(255,255,255,0.30)';this.style.borderColor='rgba(255,255,255,0.12)'">⚙</button>
     <div id="settings-panel" style="display:none;position:absolute;top:36px;right:0;min-width:190px;background:rgba(6,10,22,0.96);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:14px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.6);">
       <p style="font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,0.25);margin:0 0 8px 0;">Admin</p>
       <button id="clean-db-btn" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:5px;padding:7px 10px;color:rgba(255,255,255,0.55);font-size:11px;cursor:pointer;font-family:inherit;transition:background .15s,color .15s;" onmouseover="this.style.background='rgba(255,255,255,0.09)';this.style.color='rgba(255,255,255,0.85)'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='rgba(255,255,255,0.55)'">Clean database</button>
     </div>
-  </div>
+  </div>` : ''}
 </div>
 <div id="help-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(4,8,20,0.93);backdrop-filter:blur(8px);overflow-y:auto;padding:20px 16px;">
   <div id="help-panel" style="max-width:420px;margin:0 auto;padding:28px 24px 24px;background:#06091a;border:1px solid rgba(255,255,255,0.08);border-radius:16px;position:relative;">
@@ -1808,7 +1814,8 @@ const { fullscreen = true } = Astro.props;
       });
     };
 
-    const loadBoard = async (user: { id: string }) => {
+    const loadBoard = async (user: { id: string; app_metadata?: Record<string, string> }) => {
+      const isAdmin = user.app_metadata?.['role'] === 'admin';
       const localBoard = readLocalBoard(user.id);
 
       if (!db) { openLocalBoard(user); return; }
@@ -1836,7 +1843,7 @@ const { fullscreen = true } = Astro.props;
       renderBoard({
         container: mountEl, boardId, userId: user.id,
         initialNodes: dbNodes || [], initialEdges: dbEdges || [], initialMeta: localBoard.meta,
-        db, persistenceMode: 'remote', storageKey: getLocalStorageKey(user.id), showResetBtn: true,
+        db, persistenceMode: 'remote', storageKey: getLocalStorageKey(user.id), showResetBtn: true, isAdmin,
       });
       showBoard();
       const _t = mountEl.querySelector<HTMLElement>('#sync-toast');
