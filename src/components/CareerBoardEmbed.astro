@@ -160,7 +160,7 @@ const { fullscreen = true } = Astro.props;
     <a id="privacy-link" href="#" style="font-size:9px;color:rgba(255,255,255,0.22);text-decoration:none;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Datenschutz</a>
     <button id="impressum-link" type="button" data-impressum-trigger style="font-size:9px;color:rgba(255,255,255,0.22);background:none;border:none;padding:0;cursor:pointer;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Impressum</button>
   </div>
-  <span style="font-size:7.5px;color:rgba(255,255,255,0.18);letter-spacing:.05em;font-family:inherit;align-self:flex-end;">v0.029</span>
+  <span style="font-size:7.5px;color:rgba(255,255,255,0.18);letter-spacing:.05em;font-family:inherit;align-self:flex-end;">v0.030</span>
 </div>
 <div style="position:fixed;top:20px;right:20px;z-index:50;display:flex;gap:8px;align-items:center;">
   <button id="ai-chat-btn" title="Chat with Gecko AI" style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.28);border-radius:50%;width:29px;height:29px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:0.85;transition:opacity .2s,border-color .2s,background .2s;" onmouseover="this.style.opacity='1';this.style.borderColor='rgba(0,255,136,0.7)';this.style.background='rgba(0,255,136,0.15)'" onmouseout="this.style.opacity='0.85';this.style.borderColor='rgba(0,255,136,0.28)';this.style.background='rgba(0,255,136,0.08)'" onclick="var t=document.getElementById('gekko-toggle');if(t)t.click()"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 2 L11.6 8.4 L18 10 L11.6 11.6 L10 18 L8.4 11.6 L2 10 L8.4 8.4 Z" fill="#00FF88"/><circle cx="16.5" cy="3.5" r="1.4" fill="#00FF88" opacity="0.6"/><circle cx="4" cy="16" r="1" fill="#00FF88" opacity="0.45"/></svg></button>
@@ -592,44 +592,143 @@ const { fullscreen = true } = Astro.props;
           setTimeout(() => window.print(), 50);
         });
 
-        const buildPrintDoc = (svgHtml: string, reportHtml: string, pName: string, pRole: string, pDate: string): string => {
+        const buildPrintDoc = (svgHtml: string, reportHtml: string, boardState: any, pName: string, pRole: string, pDate: string): string => {
           const H = (s: string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+          const sec = (id: string): string => {
+            const m = reportHtml.match(new RegExp('<section[^>]*?id=["\']' + id + '["\'][^>]*?>([\\s\\S]*?)<\\/section>', 'i'));
+            return m ? m[1].trim() : '';
+          };
+          const summaryHtml = sec('summary') || reportHtml;
+          const stratfitHtml = sec('strategiefit') || '';
+          const visionHtml = sec('vision') || '';
+          const planHtml = sec('plan') || '';
+          const nextHtml = sec('next') || '';
+
+          const nodes: any[] = boardState?.nodes || [];
+          const meta: any = boardState?.meta || {};
+          const dests = nodes.filter((n: any) => n.cat === 'destination');
+          const steps = nodes.filter((n: any) => n.cat !== 'destination');
+          const nearTL = H(meta.timelineNear || '3 Mo');
+          const midTL = H(meta.timelineMid || '6 Mo');
+          const farTL = H(meta.timelineFar || '—');
+
+          const css = [
+            '@page{size:A4 landscape;margin:12mm 16mm}',
+            '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}',
+            'body{font-family:"Helvetica Neue",Arial,sans-serif;color:#1a1a2e;background:#fff;font-size:10px}',
+            '.pg{height:100vh;display:flex;flex-direction:column;overflow:hidden}',
+            '.pg+.pg{page-break-before:always}',
+            '.brd-hdr{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:8px;border-bottom:2px solid #04081a;margin-bottom:10px;flex-shrink:0}',
+            '.brd-name{font-size:20px;font-weight:700;letter-spacing:-.02em;color:#04081a}',
+            '.brd-role{font-size:9px;color:#6b7280;margin-top:3px}',
+            '.brd-badge{font-size:7px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1e5fa8}',
+            '.board-wrap{flex:1;border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;min-height:0}',
+            '.board-wrap svg{width:100%;height:100%;display:block}',
+            '.brd-ftr{display:flex;justify-content:space-between;padding-top:7px;border-top:1px solid #e5e7eb;margin-top:7px;font-size:7.5px;color:#9ca3af;flex-shrink:0}',
+            '.sum-hdr{background:#04081a;color:white;padding:11px 18px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}',
+            '.sum-logo{font-size:8px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.4);display:flex;align-items:center;gap:6px}',
+            '.sum-logo-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#00cc77}',
+            '.sum-hdr-title{font-size:15px;font-weight:300;letter-spacing:.05em;color:white}',
+            '.sum-hdr-meta{text-align:right;font-size:8px;color:rgba(255,255,255,.38)}',
+            '.sum-hdr-meta b{display:block;font-size:7px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(0,200,120,.7);margin-bottom:2px}',
+            '.sum-body{flex:1;display:grid;grid-template-columns:1fr 188px;min-height:0}',
+            '.sum-main{padding:14px 18px;border-right:1px solid #e5e7eb;overflow:hidden}',
+            '.sum-main h3{font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#9ca3af;margin:13px 0 6px;padding-bottom:3px;border-bottom:1px solid #f3f4f6}',
+            '.sum-main h3:first-child{margin-top:0}',
+            '.sum-main p{font-size:10.5px;line-height:1.72;color:#374151;margin-bottom:7px}',
+            '.sum-main strong{color:#1a1a2e}',
+            '.sum-sidebar{padding:12px;background:#f8f9fc;display:flex;flex-direction:column;gap:9px}',
+            '.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}',
+            '.stat{background:white;border:1px solid #e5e7eb;border-radius:6px;padding:8px 6px;text-align:center}',
+            '.stat-val{font-size:19px;font-weight:700;color:#1e5fa8;line-height:1;margin-bottom:3px}',
+            '.stat-lbl{font-size:7px;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;line-height:1.3}',
+            '.tl-card{background:white;border:1px solid #e5e7eb;border-radius:6px;padding:8px 10px}',
+            '.tl-lbl{font-size:7px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#9ca3af;margin-bottom:6px}',
+            '.tl-row{display:flex;justify-content:space-between;font-size:8.5px;color:#6b7280;margin-bottom:3px}',
+            '.tl-row b{color:#1a1a2e;font-weight:600}',
+            '.sf-card{background:#e8f1fb;border:1px solid #c3d9f5;border-radius:6px;padding:9px 11px;flex:1}',
+            '.sf-lbl{font-size:7px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#1e5fa8;margin-bottom:6px}',
+            '.sf-card p{font-size:9px;line-height:1.65;color:#374151;margin-bottom:5px}',
+            '.sf-card strong{color:#1a1a2e}',
+            '.sum-ftr{padding:6px 18px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:7.5px;color:#9ca3af;flex-shrink:0}',
+            '.pg-sec{flex-direction:row}',
+            '.sec-bar{width:4px;flex-shrink:0}',
+            '.sec-wrap{flex:1;display:flex;flex-direction:column;padding:14px 18px}',
+            '.sec-top{display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;border-bottom:1px solid #e5e7eb;margin-bottom:12px;flex-shrink:0}',
+            '.sec-top-logo{font-size:7px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#d1d5db}',
+            '.sec-top-r{font-size:7.5px;color:#9ca3af}',
+            '.sec-eyebrow{font-size:8px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#9ca3af;margin-bottom:4px}',
+            '.sec-title{font-size:24px;font-weight:300;letter-spacing:-.01em;color:#04081a;margin-bottom:13px;flex-shrink:0;line-height:1.1}',
+            '.sec-body{flex:1;overflow:hidden}',
+            '.sec-body.cols{column-count:2;column-gap:22px}',
+            '.sec-body h3{font-size:10px;font-weight:700;color:#04081a;margin:12px 0 5px}',
+            '.sec-body h3:first-child{margin-top:0}',
+            '.sec-body p{font-size:10.5px;line-height:1.75;color:#374151;margin-bottom:8px}',
+            '.sec-body ul{padding-left:16px;margin-bottom:8px}',
+            '.sec-body li{font-size:10.5px;line-height:1.75;color:#374151;margin-bottom:5px}',
+            '.sec-body strong{color:#1a1a2e}',
+            '.sec-body em{color:#4b5563}',
+            '.sec-ftr{margin-top:auto;padding-top:6px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:7.5px;color:#9ca3af;flex-shrink:0}',
+          ].join('');
+
+          const secPage = (title: string, color: string, content: string, twoCol: boolean, pgN: number): string => [
+            '<div class="pg pg-sec">',
+            '<div class="sec-bar" style="background:' + color + '"></div>',
+            '<div class="sec-wrap">',
+            '<div class="sec-top"><span class="sec-top-logo">GOAL · GEKKO</span><span class="sec-top-r">' + H(pName) + ' · ' + H(pDate) + '</span></div>',
+            '<div class="sec-eyebrow">Karriere-Strategieplan</div>',
+            '<div class="sec-title">' + H(title) + '</div>',
+            '<div class="sec-body' + (twoCol ? ' cols' : '') + '">' + content + '</div>',
+            '<div class="sec-ftr"><span>' + H(pName) + (pRole ? ' · ' + H(pRole) : '') + '</span><span>' + pgN + ' / 5</span></div>',
+            '</div></div>',
+          ].join('\n');
+
+          const pg1 = [
+            '<div class="pg">',
+            '<div class="brd-hdr">',
+            '<div><div class="brd-name">' + H(pName) + '</div><div class="brd-role">' + H(pRole) + '</div></div>',
+            '<div style="text-align:right"><div class="brd-badge">GOAL · GEKKO</div><div style="font-size:9px;color:#9ca3af;margin-top:3px">' + H(pDate) + '</div></div>',
+            '</div>',
+            '<div class="board-wrap">' + svgHtml + '</div>',
+            '<div class="brd-ftr"><span>Karriere-Strategieplan</span><span>1 / 5</span></div>',
+            '</div>',
+          ].join('\n');
+
+          const pg2 = [
+            '<div class="pg">',
+            '<div class="sum-hdr">',
+            '<div class="sum-logo"><span class="sum-logo-dot"></span>GOAL · GEKKO</div>',
+            '<div class="sum-hdr-title">Management Summary</div>',
+            '<div class="sum-hdr-meta"><b>Karriere-Strategieplan</b>' + H(pDate) + '</div>',
+            '</div>',
+            '<div class="sum-body">',
+            '<div class="sum-main">' + summaryHtml + '</div>',
+            '<div class="sum-sidebar">',
+            '<div class="stats-grid">',
+            '<div class="stat"><div class="stat-val">' + dests.length + '</div><div class="stat-lbl">Karriere-ziele</div></div>',
+            '<div class="stat"><div class="stat-val">' + steps.length + '</div><div class="stat-lbl">Meilen-steine</div></div>',
+            '</div>',
+            '<div class="tl-card"><div class="tl-lbl">Zeitplan</div>',
+            '<div class="tl-row"><span>Kurzfristig</span><b>' + nearTL + '</b></div>',
+            '<div class="tl-row"><span>Mittelfristig</span><b>' + midTL + '</b></div>',
+            '<div class="tl-row"><span>Langfristig</span><b>' + farTL + '</b></div>',
+            '</div>',
+            stratfitHtml ? '<div class="sf-card"><div class="sf-lbl">↗ Strategiefit</div>' + stratfitHtml + '</div>' : '',
+            '</div>',
+            '</div>',
+            '<div class="sum-ftr"><span>' + H(pName) + (pRole ? ' · ' + H(pRole) : '') + '</span><span>2 / 5</span></div>',
+            '</div>',
+          ].join('\n');
+
           return [
             '<!DOCTYPE html><html><head><meta charset="utf-8">',
-            '<title>' + H(pName) + ' — Strategieplan</title><style>',
-            '@page{size:A4 landscape;margin:14mm 18mm}',
-            '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}',
-            'body{font-family:Georgia,"Times New Roman",serif;color:#1a1a2e;background:#fff}',
-            '.pg{height:100vh;display:flex;flex-direction:column}',
-            '.pg-board{page-break-after:always}',
-            '.hdr{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:8px;border-bottom:1.5px solid #1a1a2e;margin-bottom:12px}',
-            '.hdr-name{font-size:18px;font-weight:700;letter-spacing:-.03em}',
-            '.hdr-sub{font-size:9.5px;color:#6b7280;margin-top:2px}',
-            '.hdr-r{text-align:right;font-size:9px;color:#9ca3af}',
-            '.hdr-r b{display:block;font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(0,200,90,.8);margin-bottom:2px}',
-            '.board-wrap{flex:1;border:1px solid #e5e7eb;border-radius:6px;overflow:hidden}',
-            '.board-wrap svg{width:100%;height:100%;display:block;background:#fff}',
-            '.report-body{column-count:2;column-gap:22px;margin-top:2px}',
-            '.report-body h2{column-span:all;font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#9ca3af;border-bottom:1px solid #e5e7eb;padding-bottom:4px;margin:16px 0 9px}',
-            '.report-body h2:first-child{margin-top:0}',
-            '.report-body h3{font-size:11px;font-weight:700;color:#1a1a2e;margin:10px 0 5px}',
-            '.report-body p{font-size:10.5px;line-height:1.78;color:#374151;margin-bottom:8px}',
-            '.report-body ul{padding-left:15px;margin-bottom:8px}',
-            '.report-body li{font-size:10.5px;line-height:1.78;color:#374151;margin-bottom:3px}',
-            '.report-body strong{color:#1a1a2e}.report-body em{color:#4b5563}',
-            '.footer{margin-top:auto;padding-top:8px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:8px;color:#9ca3af}',
-            '</style></head><body>',
-            '<div class="pg pg-board">',
-            '  <div class="hdr"><div><div class="hdr-name">' + H(pName) + '</div><div class="hdr-sub">' + H(pRole) + '</div></div>',
-            '  <div class="hdr-r"><b>Goal · Gekko</b>Karriere-Strategieplan · ' + H(pDate) + '</div></div>',
-            '  <div class="board-wrap">' + svgHtml + '</div>',
-            '</div>',
-            '<div class="pg pg-report">',
-            '  <div class="hdr"><div><div class="hdr-name" style="font-size:15px">' + H(pName) + ' — Strategieplan</div><div class="hdr-sub">' + H(pRole) + '</div></div>',
-            '  <div class="hdr-r"><b>Goal · Gekko</b>' + H(pDate) + '</div></div>',
-            '  <div class="report-body">' + reportHtml + '</div>',
-            '  <div class="footer"><span>Goal · Gekko · Karriere-Strategieplan</span><span>' + H(pDate) + '</span></div>',
-            '</div>',
+            '<title>' + H(pName) + ' — Strategieplan</title>',
+            '<style>' + css + '</style>',
+            '</head><body>',
+            pg1, pg2,
+            secPage('Karrierevision', '#1e5fa8', visionHtml || '<p>—</p>', false, 3),
+            secPage('Entwicklungsplan', '#1d9e75', planHtml || '<p>—</p>', true, 4),
+            secPage('Nächste Schritte', '#e08230', nextHtml || '<p>—</p>', false, 5),
             '</body></html>',
           ].join('\n');
         };
@@ -687,14 +786,14 @@ const { fullscreen = true } = Astro.props;
             const bMeta = boardState?.meta || {};
             const pName = bMeta.homeTitle || 'Career Strategy';
             const pRole = bMeta.homeLine1 || '';
-            const pDate = new Date().toLocaleDateString(selectedLang + '-' + selectedLang.toUpperCase(), { day: 'numeric', month: 'long', year: 'numeric' });
+            const pDate = (() => { try { return new Date().toLocaleDateString(selectedLang, { day: 'numeric', month: 'long', year: 'numeric' }); } catch { return new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }); } })();
 
             const win = window.open('', '_blank', 'width=1200,height=850');
             if (!win) { alert('Popup blockiert — bitte im Browser-Dialog erlauben.'); clearToast(); return; }
-            win.document.write(buildPrintDoc(svgHtml, report, pName, pRole, pDate));
+            win.document.write(buildPrintDoc(svgHtml, report, boardState, pName, pRole, pDate));
             win.document.close();
             clearToast();
-            setTimeout(() => win.print(), 900);
+            setTimeout(() => win.print(), 1400);
           } catch (err) {
             console.error('Report error:', err);
             clearToast();

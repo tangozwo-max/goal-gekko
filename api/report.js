@@ -1,14 +1,15 @@
-export const config = { maxDuration: 60 };
+export const config = { maxDuration: 300 };
 
 const MODEL = 'claude-haiku-4-5-20251001';
 
 const SYSTEM = `You are a professional career coach writing a personalized strategic career development report.
 
-Format your response as an HTML fragment using ONLY these tags: <h2>, <h3>, <p>, <strong>, <em>, <ul>, <li>.
-Do NOT include <!DOCTYPE>, <html>, <head>, <body>, or any wrapper tags.
+Format your response as exactly five <section> elements with these id attributes: summary, strategiefit, vision, plan, next.
+Inside sections use ONLY these tags: <h3>, <p>, <strong>, <em>, <ul>, <li>.
+Do NOT use <h2> tags, do NOT include <!DOCTYPE>, <html>, <head>, <body>, or any wrapper tags.
 Do NOT use markdown syntax (no **, no ##, no bullet dashes).
 
-Detect the language from the board content and write the entire report in that language.
+Detect the language from the board content and write in that language (unless overridden by an explicit instruction).
 Write warmly but professionally, as if coaching the person directly.
 Be specific — reference the actual goals, milestones, and details from the board.
 Avoid generic career advice. Make it personal and actionable.`;
@@ -74,13 +75,24 @@ function buildPrompt(boardState) {
 
   lines.push(`Timeline: Near-term: "${meta.timelineNear || '3 months'}", Mid: "${meta.timelineMid || '6 months'}", Long: "${meta.timelineFar || 'Future'}"`);
   lines.push('');
-  lines.push('Write exactly four sections with <h2> headings:');
-  lines.push('1. Current situation — 2-3 personal sentences about where this person stands today');
-  lines.push('2. Career vision — one focused paragraph per goal, describing the destination vividly');
-  lines.push('3. Development plan — flowing prose grouping milestones by category, referencing the timeline');
-  lines.push('4. Next steps — 3-5 concrete, specific actions as <ul><li> list');
+  lines.push('Write exactly five <section> elements:');
   lines.push('');
-  lines.push('Target length: 450-600 words. Keep it personal and direct.');
+  lines.push('<section id="summary"> — 150-200 words');
+  lines.push('Brief overview: 1-2 sentences on current situation, 1-2 sentences per career goal (use <h3> per goal), 1-2 sentences on the development approach. No market analysis. No next steps.');
+  lines.push('');
+  lines.push('<section id="strategiefit"> — 60-90 words');
+  lines.push('One focused paragraph: why is NOW the ideal moment for this career transition? Reference relevant macro trends (AI, digitization, industry shifts, post-pandemic changes) and show how this person\'s planned moves align with that tailwind. Make it feel strategic and motivating — this is the "why now" argument.');
+  lines.push('');
+  lines.push('<section id="vision"> — 250-350 words');
+  lines.push('Rich, vivid career vision. Use <h3> for each goal. Paint the picture: what does success look like, what impact does this person create, what excites them? Write in second person ("Sie werden..." or "You will...").');
+  lines.push('');
+  lines.push('<section id="plan"> — 250-350 words');
+  lines.push('Detailed development roadmap. Group milestones by category using <h3> headings. For each group explain the strategic logic and reference the timeline bands. Be specific about sequence and priorities.');
+  lines.push('');
+  lines.push('<section id="next"> — 3-5 items as <ul><li>');
+  lines.push('Concrete, specific, actionable next steps. Each item: one clear action + timeframe. No vague advice.');
+  lines.push('');
+  lines.push('Total target: 800-1100 words across all five sections.');
 
   return lines.join('\n');
 }
@@ -113,7 +125,7 @@ export default async function handler(req, res) {
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 1600,
+      max_tokens: 3200,
       system: SYSTEM,
       messages: [{ role: 'user', content: userPrompt }],
     }),
