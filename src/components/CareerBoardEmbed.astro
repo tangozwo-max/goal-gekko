@@ -192,7 +192,7 @@ const { fullscreen = true } = Astro.props;
         <button id="report-lang-close-btn" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:13px;cursor:pointer;padding:0 2px;line-height:1;transition:color .12s;" onmouseover="this.style.color='rgba(255,255,255,0.8)'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">✕</button>
       </div>
       <label style="display:block;font-size:10px;color:rgba(255,255,255,0.45);margin-bottom:6px;letter-spacing:.02em;">Sprache des Berichts</label>
-      <select id="report-lang-select" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:5px;padding:7px 9px;color:rgba(255,255,255,0.8);font-size:11px;font-family:inherit;cursor:pointer;outline:none;margin-bottom:12px;appearance:none;-webkit-appearance:none;"></select>
+      <select id="report-lang-select" style="width:100%;background:#0d1428;border:1px solid rgba(255,255,255,0.14);border-radius:5px;padding:7px 9px;color:rgba(255,255,255,0.82);font-size:11px;font-family:inherit;cursor:pointer;outline:none;margin-bottom:12px;"></select>
       <button id="report-lang-generate" style="width:100%;background:rgba(0,255,136,0.07);border:1px solid rgba(0,255,136,0.22);border-radius:6px;padding:9px 11px;color:rgba(0,255,136,0.85);font-size:12px;cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s,color .15s;" onmouseover="this.style.background='rgba(0,255,136,0.14)';this.style.borderColor='rgba(0,255,136,0.45)';this.style.color='rgba(0,255,136,1)'" onmouseout="this.style.background='rgba(0,255,136,0.07)';this.style.borderColor='rgba(0,255,136,0.22)';this.style.color='rgba(0,255,136,0.85)'">✦ Generieren</button>
     </div>
   </div>
@@ -497,6 +497,8 @@ const { fullscreen = true } = Astro.props;
             const opt = document.createElement('option');
             opt.value = code;
             opt.textContent = label;
+            opt.style.background = '#0d1428';
+            opt.style.color = 'rgba(255,255,255,0.82)';
             if (code === defaultLang) opt.selected = true;
             langSelect.appendChild(opt);
           });
