@@ -1,6 +1,6 @@
-export const config = { runtime: 'edge', maxDuration: 60 };
+export const config = { maxDuration: 60 };
 
-const MODEL = 'claude-sonnet-4-6';
+const MODEL = 'claude-haiku-4-5-20251001';
 
 const SYSTEM = `You are a professional career coach writing a personalized strategic career development report.
 
@@ -85,27 +85,14 @@ function buildPrompt(boardState) {
   return lines.join('\n');
 }
 
-export default async function handler(request) {
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type' } });
-  }
-  if (request.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
-  }
+export default async function handler(req, res) {
+  if (req.method === 'OPTIONS') { res.status(204).end(); return; }
+  if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured' }), {
-      status: 500, headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  if (!apiKey) { res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' }); return; }
 
-  let body;
-  try { body = await request.json(); } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
-  }
-
-  const { boardState } = body;
+  const { boardState } = req.body || {};
   const userPrompt = buildPrompt(boardState);
 
   const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
@@ -117,7 +104,7 @@ export default async function handler(request) {
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 2000,
+      max_tokens: 1600,
       system: SYSTEM,
       messages: [{ role: 'user', content: userPrompt }],
     }),
@@ -125,11 +112,11 @@ export default async function handler(request) {
 
   if (!anthropicRes.ok) {
     const err = await anthropicRes.text();
-    return new Response(JSON.stringify({ error: err }), { status: anthropicRes.status, headers: { 'Content-Type': 'application/json' } });
+    res.status(anthropicRes.status).json({ error: err });
+    return;
   }
 
   const data = await anthropicRes.json();
   const report = data.content?.find(c => c.type === 'text')?.text || '';
-
-  return new Response(JSON.stringify({ report }), { headers: { 'Content-Type': 'application/json' } });
+  res.json({ report });
 }
