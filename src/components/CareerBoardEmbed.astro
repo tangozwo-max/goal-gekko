@@ -160,7 +160,7 @@ const { fullscreen = true } = Astro.props;
     <a id="privacy-link" href="#" style="font-size:9px;color:rgba(255,255,255,0.22);text-decoration:none;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Datenschutz</a>
     <button id="impressum-link" type="button" data-impressum-trigger style="font-size:9px;color:rgba(255,255,255,0.22);background:none;border:none;padding:0;cursor:pointer;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Impressum</button>
   </div>
-  <span style="font-size:7.5px;color:rgba(255,255,255,0.18);letter-spacing:.05em;font-family:inherit;align-self:flex-end;">v0.031</span>
+  <span style="font-size:7.5px;color:rgba(255,255,255,0.18);letter-spacing:.05em;font-family:inherit;align-self:flex-end;">v0.032</span>
 </div>
 <div style="position:fixed;top:20px;right:20px;z-index:50;display:flex;gap:8px;align-items:center;">
   <button id="ai-chat-btn" title="Chat with Gecko AI" style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.28);border-radius:50%;width:29px;height:29px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:0.85;transition:opacity .2s,border-color .2s,background .2s;" onmouseover="this.style.opacity='1';this.style.borderColor='rgba(0,255,136,0.7)';this.style.background='rgba(0,255,136,0.15)'" onmouseout="this.style.opacity='0.85';this.style.borderColor='rgba(0,255,136,0.28)';this.style.background='rgba(0,255,136,0.08)'" onclick="var t=document.getElementById('gekko-toggle');if(t)t.click()"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 2 L11.6 8.4 L18 10 L11.6 11.6 L10 18 L8.4 11.6 L2 10 L8.4 8.4 Z" fill="#00FF88"/><circle cx="16.5" cy="3.5" r="1.4" fill="#00FF88" opacity="0.6"/><circle cx="4" cy="16" r="1" fill="#00FF88" opacity="0.45"/></svg></button>
@@ -611,26 +611,32 @@ const { fullscreen = true } = Astro.props;
           const nearTL = H(meta.timelineNear || '3 Mo');
           const midTL = H(meta.timelineMid || '6 Mo');
           const farTL = H(meta.timelineFar || '—');
+          const logoSrc = window.location.origin + '/images/goal_gekko.gif';
 
-          // Split content at each <h3> and wrap in visual cards
+          // Wrap each <h3> section in a card
           const wrapSecs = (html: string): string =>
             html.split(/(?=<h3[\s>])/).filter((p: string) => p.trim())
                 .map((p: string) => '<div class="cc">' + p.trim() + '</div>').join('');
 
+          // Like wrapSecs but prepends a "Vision N" badge above each card title
+          const wrapVision = (html: string): string =>
+            html.split(/(?=<h3[\s>])/).filter((p: string) => p.trim())
+                .map((p: string, i: number) =>
+                  '<div class="cc"><div class="cc-badge">Vision ' + (i + 1) + '</div>' + p.trim() + '</div>'
+                ).join('');
+
           const css = [
             '@page{size:A4 portrait;margin:18mm 22mm 15mm 22mm}',
-            '@page board{size:A4 landscape;margin:10mm 14mm}',
             '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}',
             'body{font-family:"Helvetica Neue",Arial,sans-serif;color:#111;background:#fff;font-size:10.5px}',
             '.pg{overflow:hidden}',
             '.pg+.pg{break-before:page}',
             '.pg-fill{height:100vh;display:flex;flex-direction:column}',
-            '.pg-board{page:board}',
-            // Title page
+            // ── Title page ──────────────────────────────────────────
             '.t-topbar{height:5px;background:#001F4D;flex-shrink:0}',
             '.t-body{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 18%}',
-            '.t-logo{display:flex;align-items:center;gap:9px;margin-bottom:40px}',
-            '.t-logo-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#0057A8}',
+            '.t-logo{display:flex;align-items:center;gap:11px;margin-bottom:42px}',
+            '.t-logo-img{width:34px;height:34px;object-fit:contain;display:block}',
             '.t-logo-txt{font-size:8px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#9DAFC5}',
             '.t-rule{width:56px;height:2px;background:#001F4D;margin-bottom:24px}',
             '.t-h1{font-size:40px;font-weight:700;color:#001F4D;letter-spacing:-.03em;line-height:1.08;margin-bottom:10px}',
@@ -643,22 +649,23 @@ const { fullscreen = true } = Astro.props;
             '.t-foot-conf{font-size:7px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#CACFD8}',
             '.t-foot-pg{font-size:8px;color:#CACFD8}',
             '.t-botbar{height:3px;background:#0057A8;flex-shrink:0}',
-            // Board page
-            '.brd-hdr{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:8px;border-bottom:1px solid #DDE2EC;margin-bottom:10px;flex-shrink:0}',
+            // ── Board page (portrait, map preserves its own ratio) ──
+            '.brd-hdr{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:8px;border-bottom:1px solid #DDE2EC;margin-bottom:12px;flex-shrink:0}',
             '.brd-name{font-size:17px;font-weight:700;color:#001F4D;letter-spacing:-.01em}',
             '.brd-sub{font-size:8.5px;color:#9CA3AF;margin-top:2px}',
             '.brd-badge{font-size:7px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#0057A8}',
-            '.board-wrap{flex:1;border:1px solid #E5E9F0;border-radius:4px;overflow:hidden;min-height:0}',
+            '.board-outer{flex:1;display:flex;flex-direction:column;justify-content:center;overflow:hidden;min-height:0}',
+            '.board-wrap{width:100%;aspect-ratio:4/3;overflow:hidden;border:1px solid #E5E9F0;border-radius:4px;flex-shrink:0}',
             '.board-wrap svg{width:100%;height:100%;display:block}',
-            '.brd-ftr{display:flex;justify-content:space-between;padding-top:7px;border-top:1px solid #DDE2EC;margin-top:8px;font-size:7.5px;color:#9CA3AF;flex-shrink:0}',
-            // Portrait pages — shared header/footer
+            '.brd-ftr{display:flex;justify-content:space-between;padding-top:7px;border-top:1px solid #DDE2EC;margin-top:10px;font-size:7.5px;color:#9CA3AF;flex-shrink:0}',
+            // ── Shared portrait page header/footer ──────────────────
             '.pghdr{display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:2px solid #001F4D;margin-bottom:22px;flex-shrink:0}',
             '.pghdr-sec{font-size:7.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#001F4D;display:flex;align-items:center;gap:9px}',
             '.pghdr-sec::before{content:"";display:inline-block;width:12px;height:2.5px;background:#0057A8}',
             '.pghdr-right{font-size:7.5px;color:#A0A9B8}',
             '.pgbody{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column}',
             '.pgftr{display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid #E5E9F0;margin-top:13px;font-size:7.5px;color:#A0A9B8;flex-shrink:0}',
-            // Management Summary
+            // ── Management Summary ───────────────────────────────────
             '.sum-grid{display:grid;grid-template-columns:1fr 172px;gap:22px;flex:1;min-height:0}',
             '.sum-left{display:flex;flex-direction:column;gap:14px;overflow:hidden}',
             '.section-label{font-size:7px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#0057A8;margin-bottom:6px}',
@@ -681,13 +688,14 @@ const { fullscreen = true } = Astro.props;
             '.tl-item{display:flex;justify-content:space-between;align-items:baseline;font-size:8.5px;margin-bottom:5px;color:#6B7280}',
             '.tl-item:last-child{margin-bottom:0}',
             '.tl-item b{color:#111;font-weight:600}',
-            // Section pages
+            // ── Section detail pages ─────────────────────────────────
             '.sec-number{font-size:7.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#A0A9B8;margin-bottom:7px;flex-shrink:0}',
             '.sec-bigtitle{font-size:28px;font-weight:700;color:#001F4D;letter-spacing:-.02em;line-height:1.08;margin-bottom:20px;flex-shrink:0}',
             '.sec-content{flex:1;overflow:hidden}',
             '.sec-content.cols{column-count:2;column-gap:22px}',
             // Content cards
             '.cc{background:#FAFBFC;border:1px solid #E5E9F0;border-radius:4px;padding:13px 16px;margin-bottom:11px;break-inside:avoid}',
+            '.cc-badge{font-size:7px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#0057A8;margin-bottom:5px}',
             '.cc h3{font-size:10px;font-weight:700;color:#001F4D;margin:0 0 8px;padding-bottom:7px;border-bottom:1px solid #E5E9F0}',
             '.cc p{font-size:10.5px;line-height:1.8;color:#374151;margin-bottom:7px}',
             '.cc p:last-child{margin-bottom:0}',
@@ -696,11 +704,11 @@ const { fullscreen = true } = Astro.props;
             '.cc ul{padding-left:0;margin:7px 0 0;list-style:none}',
             '.cc li{font-size:10.5px;line-height:1.8;color:#374151;padding-left:14px;position:relative;margin-bottom:4px}',
             '.cc li::before{content:"—";position:absolute;left:0;color:#0057A8;font-weight:700}',
-            // Steps page
+            // Steps — each step as a card with navy circle number
             '.steps-wrap ul{list-style:none;padding:0;counter-reset:step}',
-            '.steps-wrap li{counter-increment:step;display:flex;align-items:flex-start;gap:18px;padding:14px 0;border-bottom:1px solid #EEF1F5}',
-            '.steps-wrap li:last-child{border-bottom:none}',
-            '.steps-wrap li::before{content:"0" counter(step);font-size:26px;font-weight:700;color:#DDE2EC;line-height:1.1;flex-shrink:0;width:36px}',
+            '.steps-wrap li{counter-increment:step;display:flex;gap:14px;align-items:flex-start;padding:13px 16px;background:#FAFBFC;border:1px solid #E5E9F0;border-radius:4px;margin-bottom:10px;break-inside:avoid}',
+            '.steps-wrap li:last-child{margin-bottom:0}',
+            '.steps-wrap li::before{content:counter(step);display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:50%;background:#001F4D;color:white;font-size:9px;font-weight:700;flex-shrink:0;margin-top:2px}',
             '.steps-wrap li p,.steps-wrap li{font-size:10.5px;line-height:1.8;color:#374151}',
             '.steps-wrap strong{color:#001F4D}',
           ].join('');
@@ -710,7 +718,7 @@ const { fullscreen = true } = Astro.props;
             '<div class="pg pg-fill">',
             '<div class="t-topbar"></div>',
             '<div class="t-body">',
-            '<div class="t-logo"><span class="t-logo-dot"></span><span class="t-logo-txt">GOAL · GEKKO</span></div>',
+            '<div class="t-logo"><img src="' + logoSrc + '" class="t-logo-img" alt=""><span class="t-logo-txt">GOAL · GEKKO</span></div>',
             '<div class="t-rule"></div>',
             '<div class="t-h1">Karriere-<br>Strategieplan</div>',
             '<div class="t-tagline">Persönliche Karrierestrategie &amp; Entwicklungsplan</div>',
@@ -722,14 +730,16 @@ const { fullscreen = true } = Astro.props;
             '</div>',
           ].join('');
 
-          // Page 2: Career Map (landscape)
+          // Page 2: Career Map
           const pgBoard = [
-            '<div class="pg pg-fill pg-board">',
+            '<div class="pg pg-fill">',
             '<div class="brd-hdr">',
             '<div><div class="brd-name">' + H(pName) + '</div><div class="brd-sub">' + H(pRole) + '</div></div>',
             '<div style="text-align:right"><div class="brd-badge">GOAL · GEKKO</div><div style="font-size:9px;color:#9CA3AF;margin-top:3px">' + H(pDate) + '</div></div>',
             '</div>',
+            '<div class="board-outer">',
             '<div class="board-wrap">' + svgHtml + '</div>',
+            '</div>',
             '<div class="brd-ftr"><span>Karriere-Map</span><span>2 / 6</span></div>',
             '</div>',
           ].join('');
@@ -783,7 +793,7 @@ const { fullscreen = true } = Astro.props;
             pgTitle,
             pgBoard,
             pgSummary,
-            secPg('Karrierevision', wrapSecs(visionHtml || '<p>—</p>'), 4, false),
+            secPg('Karrierevision', wrapVision(visionHtml || '<p>—</p>'), 4, false),
             secPg('Entwicklungsplan', wrapSecs(planHtml || '<p>—</p>'), 5, true),
             secPg('Nächste Schritte', '<div class="steps-wrap">' + (nextHtml || '<p>—</p>') + '</div>', 6, false),
             '</body></html>',
