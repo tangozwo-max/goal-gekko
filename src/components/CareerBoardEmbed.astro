@@ -160,20 +160,32 @@ const { fullscreen = true } = Astro.props;
     <a id="privacy-link" href="#" style="font-size:9px;color:rgba(255,255,255,0.22);text-decoration:none;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Datenschutz</a>
     <button id="impressum-link" type="button" data-impressum-trigger style="font-size:9px;color:rgba(255,255,255,0.22);background:none;border:none;padding:0;cursor:pointer;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Impressum</button>
   </div>
-  <span style="font-size:7.5px;color:rgba(255,255,255,0.18);letter-spacing:.05em;font-family:inherit;align-self:flex-end;">v0.025</span>
+  <span style="font-size:7.5px;color:rgba(255,255,255,0.18);letter-spacing:.05em;font-family:inherit;align-self:flex-end;">v0.027</span>
 </div>
 <div style="position:fixed;top:20px;right:20px;z-index:50;display:flex;gap:8px;align-items:center;">
   <button id="ai-chat-btn" title="Chat with Gecko AI" style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.28);border-radius:50%;width:29px;height:29px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:0.85;transition:opacity .2s,border-color .2s,background .2s;" onmouseover="this.style.opacity='1';this.style.borderColor='rgba(0,255,136,0.7)';this.style.background='rgba(0,255,136,0.15)'" onmouseout="this.style.opacity='0.85';this.style.borderColor='rgba(0,255,136,0.28)';this.style.background='rgba(0,255,136,0.08)'" onclick="var t=document.getElementById('gekko-toggle');if(t)t.click()"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 2 L11.6 8.4 L18 10 L11.6 11.6 L10 18 L8.4 11.6 L2 10 L8.4 8.4 Z" fill="#00FF88"/><circle cx="16.5" cy="3.5" r="1.4" fill="#00FF88" opacity="0.6"/><circle cx="4" cy="16" r="1" fill="#00FF88" opacity="0.45"/></svg></button>
-  <button id="help-btn" title="How it works" style="background:none;border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:29px;height:29px;cursor:pointer;color:rgba(255,255,255,0.30);font-size:14px;font-weight:600;line-height:1;padding:0;opacity:0.7;transition:opacity .2s,color .2s,border-color .2s;" onmouseover="this.style.opacity='1';this.style.color='rgba(255,255,255,0.72)';this.style.borderColor='rgba(255,255,255,0.32)'" onmouseout="this.style.opacity='0.7';this.style.color='rgba(255,255,255,0.30)';this.style.borderColor='rgba(255,255,255,0.12)'">?</button>
-  <button id="clear-btn" title="Board leeren" style="background:none;border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:29px;height:29px;cursor:pointer;color:rgba(255,255,255,0.30);font-size:14px;line-height:1;padding:0;opacity:0.7;transition:opacity .2s,color .2s,border-color .2s;" onmouseover="this.style.opacity='1';this.style.color='rgba(255,255,255,0.72)';this.style.borderColor='rgba(255,255,255,0.32)'" onmouseout="this.style.opacity='0.7';this.style.color='rgba(255,255,255,0.30)';this.style.borderColor='rgba(255,255,255,0.12)'">⊘</button>
-  <button id="reset-btn" title="Board zurücksetzen" style="background:none;border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:29px;height:29px;cursor:pointer;color:rgba(255,255,255,0.30);font-size:16px;line-height:1;padding:0;opacity:0.7;transition:opacity .2s,color .2s,border-color .2s;" onmouseover="this.style.opacity='1';this.style.color='rgba(255,255,255,0.72)';this.style.borderColor='rgba(255,255,255,0.32)'" onmouseout="this.style.opacity='0.7';this.style.color='rgba(255,255,255,0.30)';this.style.borderColor='rgba(255,255,255,0.12)'">↺</button>
-  ${isAdmin ? `<div style="position:relative;">
-    <button id="settings-btn" title="Settings" style="background:none;border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:29px;height:29px;cursor:pointer;color:rgba(255,255,255,0.30);font-size:14px;line-height:1;padding:0;opacity:0.7;transition:opacity .2s,color .2s,border-color .2s;" onmouseover="this.style.opacity='1';this.style.color='rgba(255,255,255,0.72)';this.style.borderColor='rgba(255,255,255,0.32)'" onmouseout="this.style.opacity='0.7';this.style.color='rgba(255,255,255,0.30)';this.style.borderColor='rgba(255,255,255,0.12)'">⚙</button>
-    <div id="settings-panel" style="display:none;position:absolute;top:36px;right:0;min-width:190px;background:rgba(6,10,22,0.96);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:14px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.6);">
-      <p style="font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,0.25);margin:0 0 8px 0;">Admin</p>
-      <button id="clean-db-btn" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:5px;padding:7px 10px;color:rgba(255,255,255,0.55);font-size:11px;cursor:pointer;font-family:inherit;transition:background .15s,color .15s;" onmouseover="this.style.background='rgba(255,255,255,0.09)';this.style.color='rgba(255,255,255,0.85)'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='rgba(255,255,255,0.55)'">Clean database</button>
+  <div style="position:relative;">
+    <button id="menu-btn" title="Menü" style="background:none;border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:29px;height:29px;cursor:pointer;color:rgba(255,255,255,0.30);font-size:18px;line-height:1;padding:0;letter-spacing:0;opacity:0.7;transition:opacity .2s,color .2s,border-color .2s;" onmouseover="this.style.opacity='1';this.style.color='rgba(255,255,255,0.72)';this.style.borderColor='rgba(255,255,255,0.32)'" onmouseout="this.style.opacity='0.7';this.style.color='rgba(255,255,255,0.30)';this.style.borderColor='rgba(255,255,255,0.12)'">⋮</button>
+    <div id="menu-panel" style="display:none;position:absolute;top:36px;right:0;min-width:200px;background:rgba(6,10,22,0.97);border:1px solid rgba(255,255,255,0.10);border-radius:10px;padding:7px;z-index:200;box-shadow:0 8px 28px rgba(0,0,0,0.65);">
+      <button id="menu-help-btn" style="width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:8px 11px;color:rgba(255,255,255,0.62);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:9px;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.92)'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,0.62)'"><span style="font-size:14px;opacity:.65;min-width:16px;text-align:center;">?</span> Hilfe</button>
+      <button id="menu-print-btn" style="width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:8px 11px;color:rgba(255,255,255,0.62);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:9px;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.92)'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,0.62)'"><span style="font-size:14px;opacity:.65;min-width:16px;text-align:center;">⎙</span> Drucken</button>
+      <div style="border-top:1px solid rgba(255,255,255,0.07);margin:5px 0;"></div>
+      <button id="menu-settings-btn" style="width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:8px 11px;color:rgba(255,255,255,0.62);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:9px;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.92)'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,0.62)'"><span style="font-size:14px;opacity:.65;min-width:16px;text-align:center;">⚙</span> Einstellungen</button>
+      <div style="border-top:1px solid rgba(255,255,255,0.07);margin:5px 0;"></div>
+      <button id="menu-clear-btn" style="width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:8px 11px;color:rgba(255,255,255,0.62);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:9px;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.92)'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,0.62)'"><span style="font-size:14px;opacity:.65;min-width:16px;text-align:center;">⊘</span> Board leeren</button>
+      <button id="menu-reset-btn" style="width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:8px 11px;color:rgba(255,255,255,0.62);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:9px;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.92)'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,0.62)'"><span style="font-size:14px;opacity:.65;min-width:16px;text-align:center;">↺</span> Zurücksetzen</button>
     </div>
-  </div>` : ''}
+    <div id="settings-panel" style="display:none;position:absolute;top:36px;right:0;min-width:200px;background:rgba(6,10,22,0.97);border:1px solid rgba(255,255,255,0.10);border-radius:10px;padding:14px;z-index:200;box-shadow:0 8px 28px rgba(0,0,0,0.65);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <p style="font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,0.25);margin:0;">Einstellungen</p>
+        <button id="settings-close-btn" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:13px;cursor:pointer;padding:0 2px;line-height:1;transition:color .12s;" onmouseover="this.style.color='rgba(255,255,255,0.8)'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">✕</button>
+      </div>
+      <p style="font-size:11px;line-height:1.7;color:rgba(255,255,255,0.4);margin:0;">Deine Daten liegen im Browser-Speicher — kein Account nötig.</p>
+      ${isAdmin ? `<div style="border-top:1px solid rgba(255,255,255,0.08);margin:10px 0 8px;"></div>
+      <p style="font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,0.20);margin:0 0 7px;">Admin</p>
+      <button id="clean-db-btn" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:5px;padding:7px 10px;color:rgba(255,255,255,0.55);font-size:11px;cursor:pointer;font-family:inherit;transition:background .15s,color .15s;" onmouseover="this.style.background='rgba(255,255,255,0.09)';this.style.color='rgba(255,255,255,0.85)'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='rgba(255,255,255,0.55)'">Clean database</button>` : ''}
+    </div>
+  </div>
 </div>
 <div id="help-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(4,8,20,0.93);backdrop-filter:blur(8px);overflow-y:auto;padding:20px 16px;">
   <div id="help-panel" style="max-width:420px;margin:0 auto;padding:28px 24px 24px;background:#06091a;border:1px solid rgba(255,255,255,0.08);border-radius:16px;position:relative;">
@@ -357,27 +369,6 @@ const { fullscreen = true } = Astro.props;
           closePrivacy();
         });
 
-        container.querySelector('#reset-btn')?.addEventListener('click', () => {
-          if (confirm('Board zurücksetzen? Alle eigenen Änderungen gehen verloren.')) {
-            localStorage.removeItem(storageKey);
-            location.reload();
-          }
-        });
-
-        container.querySelector('#clear-btn')?.addEventListener('click', () => {
-          if (confirm('Board leeren? Es bleiben nur der Home-Planet und 2 leere Ziel-Planeten.')) {
-            const blankState = {
-              nodes: [
-                { node_key: 'target1', cat: 'destination', title: 'What I will be 1', subtitle: 'Dein erstes Ziel', detail: '', status: 'planned', x: 280, y: 75, color: '#378ADD', dark_color: '#040D1C', radius: 68 },
-                { node_key: 'target2', cat: 'destination', title: 'What I will be 2', subtitle: 'Dein zweites Ziel', detail: '', status: 'planned', x: 620, y: 75, color: '#1D9E75', dark_color: '#041510', radius: 68 },
-              ],
-              edges: [],
-              meta: { homeTitle: 'What I am …', homeLine1: 'What I am now', homeLine2: 'Who I am now', homeDetail: '', timelineNear: '3 months', timelineMid: '6 months', timelineFar: 'Future' },
-            };
-            localStorage.setItem(storageKey, JSON.stringify(blankState));
-            location.reload();
-          }
-        });
 
         // Help modal — 4-step wizard
         const helpModal = container.querySelector('#help-modal');
@@ -418,7 +409,6 @@ const { fullscreen = true } = Astro.props;
         };
         const closeHelp = () => { if (helpModal) helpModal.style.display = 'none'; };
 
-        container.querySelector('#help-btn')?.addEventListener('click', openHelp);
         container.querySelector('#close-help-btn')?.addEventListener('click', closeHelp);
         helpModal?.addEventListener('click', (e) => { if (e.target === helpModal) closeHelp(); });
 
@@ -448,17 +438,63 @@ const { fullscreen = true } = Astro.props;
           openPrivacy();
         }
 
-        // Settings dropdown
-        const settingsBtn = container.querySelector('#settings-btn');
+        // 3-dot menu
+        const menuBtn = container.querySelector('#menu-btn');
+        const menuPanel = container.querySelector<HTMLElement>('#menu-panel');
         const settingsPanel = container.querySelector<HTMLElement>('#settings-panel');
-        settingsBtn?.addEventListener('click', (e) => {
+        const closeMenu = () => { if (menuPanel) menuPanel.style.display = 'none'; };
+        const closeSettings = () => { if (settingsPanel) settingsPanel.style.display = 'none'; };
+
+        menuBtn?.addEventListener('click', (e) => {
           e.stopPropagation();
+          closeSettings();
+          if (menuPanel) menuPanel.style.display = menuPanel.style.display === 'none' ? 'block' : 'none';
+        });
+        menuPanel?.addEventListener('click', (e) => e.stopPropagation());
+
+        container.querySelector('#menu-help-btn')?.addEventListener('click', () => { closeMenu(); openHelp(); });
+
+        container.querySelector('#menu-print-btn')?.addEventListener('click', () => {
+          closeMenu();
+          document.body.classList.add('gg-print-active');
+          window.addEventListener('afterprint', () => document.body.classList.remove('gg-print-active'), { once: true });
+          setTimeout(() => window.print(), 50);
+        });
+
+        container.querySelector('#menu-settings-btn')?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          closeMenu();
           if (settingsPanel) settingsPanel.style.display = settingsPanel.style.display === 'none' ? 'block' : 'none';
         });
-        document.addEventListener('click', () => {
-          if (settingsPanel) settingsPanel.style.display = 'none';
-        });
+
+        container.querySelector('#settings-close-btn')?.addEventListener('click', closeSettings);
         settingsPanel?.addEventListener('click', (e) => e.stopPropagation());
+
+        container.querySelector('#menu-clear-btn')?.addEventListener('click', () => {
+          closeMenu();
+          if (confirm('Board leeren? Es bleiben nur der Home-Planet und 2 leere Ziel-Planeten.')) {
+            const blankState = {
+              nodes: [
+                { node_key: 'target1', cat: 'destination', title: 'What I will be 1', subtitle: 'Dein erstes Ziel', detail: '', status: 'planned', x: 280, y: 75, color: '#378ADD', dark_color: '#040D1C', radius: 68 },
+                { node_key: 'target2', cat: 'destination', title: 'What I will be 2', subtitle: 'Dein zweites Ziel', detail: '', status: 'planned', x: 620, y: 75, color: '#1D9E75', dark_color: '#041510', radius: 68 },
+              ],
+              edges: [],
+              meta: { homeTitle: 'What I am …', homeLine1: 'What I am now', homeLine2: 'Who I am now', homeDetail: '', timelineNear: '3 months', timelineMid: '6 months', timelineFar: 'Future' },
+            };
+            localStorage.setItem(storageKey, JSON.stringify(blankState));
+            location.reload();
+          }
+        });
+
+        container.querySelector('#menu-reset-btn')?.addEventListener('click', () => {
+          closeMenu();
+          if (confirm('Board zurücksetzen? Alle eigenen Änderungen gehen verloren.')) {
+            localStorage.removeItem(storageKey);
+            location.reload();
+          }
+        });
+
+        document.addEventListener('click', () => { closeMenu(); closeSettings(); });
 
         container.querySelector('#clean-db-btn')?.addEventListener('click', async () => {
           if (settingsPanel) settingsPanel.style.display = 'none';
