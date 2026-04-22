@@ -160,7 +160,7 @@ const { fullscreen = true } = Astro.props;
     <a id="privacy-link" href="#" style="font-size:9px;color:rgba(255,255,255,0.22);text-decoration:none;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Datenschutz</a>
     <button id="impressum-link" type="button" data-impressum-trigger style="font-size:9px;color:rgba(255,255,255,0.22);background:none;border:none;padding:0;cursor:pointer;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Impressum</button>
   </div>
-  <span style="font-size:7.5px;color:rgba(255,255,255,0.18);letter-spacing:.05em;font-family:inherit;align-self:flex-end;">v0.028</span>
+  <span style="font-size:7.5px;color:rgba(255,255,255,0.18);letter-spacing:.05em;font-family:inherit;align-self:flex-end;">v0.029</span>
 </div>
 <div style="position:fixed;top:20px;right:20px;z-index:50;display:flex;gap:8px;align-items:center;">
   <button id="ai-chat-btn" title="Chat with Gecko AI" style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.28);border-radius:50%;width:29px;height:29px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:0.85;transition:opacity .2s,border-color .2s,background .2s;" onmouseover="this.style.opacity='1';this.style.borderColor='rgba(0,255,136,0.7)';this.style.background='rgba(0,255,136,0.15)'" onmouseout="this.style.opacity='0.85';this.style.borderColor='rgba(0,255,136,0.28)';this.style.background='rgba(0,255,136,0.08)'" onclick="var t=document.getElementById('gekko-toggle');if(t)t.click()"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 2 L11.6 8.4 L18 10 L11.6 11.6 L10 18 L8.4 11.6 L2 10 L8.4 8.4 Z" fill="#00FF88"/><circle cx="16.5" cy="3.5" r="1.4" fill="#00FF88" opacity="0.6"/><circle cx="4" cy="16" r="1" fill="#00FF88" opacity="0.45"/></svg></button>
@@ -185,6 +185,27 @@ const { fullscreen = true } = Astro.props;
       ${isAdmin ? `<div style="border-top:1px solid rgba(255,255,255,0.08);margin:10px 0 8px;"></div>
       <p style="font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,0.20);margin:0 0 7px;">Admin</p>
       <button id="clean-db-btn" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:5px;padding:7px 10px;color:rgba(255,255,255,0.55);font-size:11px;cursor:pointer;font-family:inherit;transition:background .15s,color .15s;" onmouseover="this.style.background='rgba(255,255,255,0.09)';this.style.color='rgba(255,255,255,0.85)'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='rgba(255,255,255,0.55)'">Clean database</button>` : ''}
+    </div>
+    <div id="report-lang-panel" style="display:none;position:absolute;top:36px;right:0;min-width:220px;background:rgba(6,10,22,0.97);border:1px solid rgba(255,255,255,0.10);border-radius:10px;padding:14px;z-index:200;box-shadow:0 8px 28px rgba(0,0,0,0.65);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <p style="font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,0.25);margin:0;">Strategieplan PDF</p>
+        <button id="report-lang-close-btn" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:13px;cursor:pointer;padding:0 2px;line-height:1;transition:color .12s;" onmouseover="this.style.color='rgba(255,255,255,0.8)'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">✕</button>
+      </div>
+      <label style="display:block;font-size:10px;color:rgba(255,255,255,0.45);margin-bottom:6px;letter-spacing:.02em;">Sprache des Berichts</label>
+      <select id="report-lang-select" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:5px;padding:7px 9px;color:rgba(255,255,255,0.8);font-size:11px;font-family:inherit;cursor:pointer;outline:none;margin-bottom:12px;appearance:none;-webkit-appearance:none;"></select>
+      <button id="report-lang-generate" style="width:100%;background:rgba(0,255,136,0.07);border:1px solid rgba(0,255,136,0.22);border-radius:6px;padding:9px 11px;color:rgba(0,255,136,0.85);font-size:12px;cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s,color .15s;" onmouseover="this.style.background='rgba(0,255,136,0.14)';this.style.borderColor='rgba(0,255,136,0.45)';this.style.color='rgba(0,255,136,1)'" onmouseout="this.style.background='rgba(0,255,136,0.07)';this.style.borderColor='rgba(0,255,136,0.22)';this.style.color='rgba(0,255,136,0.85)'">✦ Generieren</button>
+    </div>
+  </div>
+</div>
+<div id="confirm-panel" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(4,8,20,0.88);backdrop-filter:blur(6px);align-items:center;justify-content:center;">
+  <div style="background:#06091a;border:1px solid rgba(255,255,255,0.10);border-radius:14px;padding:28px 24px;max-width:340px;width:90%;">
+    <p id="confirm-title" style="font-size:15px;font-weight:600;color:rgba(255,255,255,0.88);margin:0 0 8px;"></p>
+    <p id="confirm-desc" style="font-size:12px;line-height:1.7;color:rgba(255,255,255,0.42);margin:0 0 18px;"></p>
+    <label style="display:block;font-size:10px;color:rgba(255,255,255,0.35);margin-bottom:6px;letter-spacing:.02em;">Zum Bestätigen <strong style="color:rgba(255,255,255,0.55);">Delete</strong> eingeben:</label>
+    <input id="confirm-input" type="text" autocomplete="off" spellcheck="false" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:5px;padding:8px 10px;color:rgba(255,255,255,0.85);font-size:12px;font-family:inherit;outline:none;margin-bottom:16px;" placeholder="Delete">
+    <div style="display:flex;gap:9px;">
+      <button id="confirm-cancel" style="flex:1;background:none;border:1px solid rgba(255,255,255,0.10);border-radius:6px;padding:9px;color:rgba(255,255,255,0.5);font-size:12px;cursor:pointer;font-family:inherit;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(255,255,255,0.06)';this.style.color='rgba(255,255,255,0.8)'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,0.5)'">Abbrechen</button>
+      <button id="confirm-ok" disabled style="flex:1;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.18);border-radius:6px;padding:9px;color:rgba(239,68,68,0.4);font-size:12px;cursor:not-allowed;font-family:inherit;transition:background .12s,color .12s,border-color .12s,opacity .12s;opacity:0.6;">Bestätigen</button>
     </div>
   </div>
 </div>
@@ -443,15 +464,86 @@ const { fullscreen = true } = Astro.props;
         const menuBtn = container.querySelector('#menu-btn');
         const menuPanel = container.querySelector<HTMLElement>('#menu-panel');
         const settingsPanel = container.querySelector<HTMLElement>('#settings-panel');
+        const langPanel = container.querySelector<HTMLElement>('#report-lang-panel');
+        const langSelect = container.querySelector<HTMLSelectElement>('#report-lang-select');
+        const confirmPanel = container.querySelector<HTMLElement>('#confirm-panel');
+        const confirmTitleEl = container.querySelector<HTMLElement>('#confirm-title');
+        const confirmDescEl = container.querySelector<HTMLElement>('#confirm-desc');
+        const confirmInput = container.querySelector<HTMLInputElement>('#confirm-input');
+        const confirmOkBtn = container.querySelector<HTMLButtonElement>('#confirm-ok');
+
         const closeMenu = () => { if (menuPanel) menuPanel.style.display = 'none'; };
         const closeSettings = () => { if (settingsPanel) settingsPanel.style.display = 'none'; };
+        const closeLangPanel = () => { if (langPanel) langPanel.style.display = 'none'; };
+
+        // Language selector setup
+        const LANGUAGES = [
+          { code: 'de', label: 'Deutsch' }, { code: 'en', label: 'English' },
+          { code: 'es', label: 'Español' }, { code: 'fr', label: 'Français' },
+          { code: 'it', label: 'Italiano' }, { code: 'pt', label: 'Português' },
+          { code: 'nl', label: 'Nederlands' }, { code: 'pl', label: 'Polski' },
+          { code: 'ru', label: 'Русский' }, { code: 'ja', label: '日本語' },
+          { code: 'zh', label: '中文' }, { code: 'ko', label: '한국어' },
+          { code: 'ar', label: 'العربية' }, { code: 'tr', label: 'Türkçe' },
+          { code: 'sv', label: 'Svenska' }, { code: 'no', label: 'Norsk' },
+          { code: 'da', label: 'Dansk' }, { code: 'fi', label: 'Suomi' },
+          { code: 'uk', label: 'Українська' }, { code: 'hi', label: 'हिन्दी' },
+        ];
+        const osLangCode = (navigator.language || 'en').split('-')[0];
+        const savedLangCode = localStorage.getItem('gg_report_lang') || osLangCode;
+        const defaultLang = LANGUAGES.find(l => l.code === savedLangCode) ? savedLangCode : 'en';
+        if (langSelect) {
+          LANGUAGES.forEach(({ code, label }) => {
+            const opt = document.createElement('option');
+            opt.value = code;
+            opt.textContent = label;
+            if (code === defaultLang) opt.selected = true;
+            langSelect.appendChild(opt);
+          });
+        }
+
+        // Confirm dialog
+        let confirmCallback: (() => void) | null = null;
+        const openConfirm = (title: string, desc: string, cb: () => void) => {
+          if (confirmTitleEl) confirmTitleEl.textContent = title;
+          if (confirmDescEl) confirmDescEl.textContent = desc;
+          if (confirmInput) confirmInput.value = '';
+          if (confirmOkBtn) { confirmOkBtn.disabled = true; confirmOkBtn.style.opacity = '0.6'; confirmOkBtn.style.color = 'rgba(239,68,68,0.4)'; confirmOkBtn.style.cursor = 'not-allowed'; confirmOkBtn.style.background = 'rgba(239,68,68,0.08)'; confirmOkBtn.style.borderColor = 'rgba(239,68,68,0.18)'; }
+          confirmCallback = cb;
+          if (confirmPanel) { confirmPanel.style.display = 'flex'; }
+          setTimeout(() => confirmInput?.focus(), 50);
+        };
+        const closeConfirm = () => {
+          if (confirmPanel) confirmPanel.style.display = 'none';
+          confirmCallback = null;
+          if (confirmInput) confirmInput.value = '';
+        };
+        confirmInput?.addEventListener('input', () => {
+          const valid = confirmInput.value === 'Delete';
+          if (confirmOkBtn) {
+            confirmOkBtn.disabled = !valid;
+            confirmOkBtn.style.opacity = valid ? '1' : '0.6';
+            confirmOkBtn.style.color = valid ? 'rgba(239,68,68,1)' : 'rgba(239,68,68,0.4)';
+            confirmOkBtn.style.background = valid ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.08)';
+            confirmOkBtn.style.cursor = valid ? 'pointer' : 'not-allowed';
+            confirmOkBtn.style.borderColor = valid ? 'rgba(239,68,68,0.4)' : 'rgba(239,68,68,0.18)';
+          }
+        });
+        container.querySelector('#confirm-cancel')?.addEventListener('click', closeConfirm);
+        container.querySelector('#confirm-ok')?.addEventListener('click', () => {
+          if (confirmCallback) confirmCallback();
+          closeConfirm();
+        });
 
         menuBtn?.addEventListener('click', (e) => {
           e.stopPropagation();
           closeSettings();
+          closeLangPanel();
           if (menuPanel) menuPanel.style.display = menuPanel.style.display === 'none' ? 'block' : 'none';
         });
         menuPanel?.addEventListener('click', (e) => e.stopPropagation());
+        langPanel?.addEventListener('click', (e) => e.stopPropagation());
+        container.querySelector('#report-lang-close-btn')?.addEventListener('click', closeLangPanel);
 
         container.querySelector('#menu-help-btn')?.addEventListener('click', () => { closeMenu(); openHelp(); });
 
@@ -540,8 +632,17 @@ const { fullscreen = true } = Astro.props;
           ].join('\n');
         };
 
-        container.querySelector('#menu-report-btn')?.addEventListener('click', async () => {
+        container.querySelector('#menu-report-btn')?.addEventListener('click', (e) => {
+          e.stopPropagation();
           closeMenu();
+          if (langPanel) langPanel.style.display = langPanel.style.display === 'none' ? 'block' : 'none';
+        });
+
+        container.querySelector('#report-lang-generate')?.addEventListener('click', async () => {
+          const selectedLang = langSelect?.value || 'en';
+          localStorage.setItem('gg_report_lang', selectedLang);
+          closeLangPanel();
+
           const toast = container.querySelector<HTMLElement>('#sync-toast');
           const setToast = (msg: string) => { if (toast) { toast.textContent = msg; toast.style.opacity = '1'; } };
           const clearToast = () => { if (toast) toast.style.opacity = '0'; };
@@ -551,7 +652,7 @@ const { fullscreen = true } = Astro.props;
             const res = await fetch('/api/report', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ boardState }),
+              body: JSON.stringify({ boardState, language: selectedLang }),
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const { report } = await res.json();
@@ -584,7 +685,7 @@ const { fullscreen = true } = Astro.props;
             const bMeta = boardState?.meta || {};
             const pName = bMeta.homeTitle || 'Career Strategy';
             const pRole = bMeta.homeLine1 || '';
-            const pDate = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+            const pDate = new Date().toLocaleDateString(selectedLang + '-' + selectedLang.toUpperCase(), { day: 'numeric', month: 'long', year: 'numeric' });
 
             const win = window.open('', '_blank', 'width=1200,height=850');
             if (!win) { alert('Popup blockiert — bitte im Browser-Dialog erlauben.'); clearToast(); return; }
@@ -610,29 +711,37 @@ const { fullscreen = true } = Astro.props;
 
         container.querySelector('#menu-clear-btn')?.addEventListener('click', () => {
           closeMenu();
-          if (confirm('Board leeren? Es bleiben nur der Home-Planet und 2 leere Ziel-Planeten.')) {
-            const blankState = {
-              nodes: [
-                { node_key: 'target1', cat: 'destination', title: 'What I will be 1', subtitle: 'Dein erstes Ziel', detail: '', status: 'planned', x: 280, y: 75, color: '#378ADD', dark_color: '#040D1C', radius: 68 },
-                { node_key: 'target2', cat: 'destination', title: 'What I will be 2', subtitle: 'Dein zweites Ziel', detail: '', status: 'planned', x: 620, y: 75, color: '#1D9E75', dark_color: '#041510', radius: 68 },
-              ],
-              edges: [],
-              meta: { homeTitle: 'What I am …', homeLine1: 'What I am now', homeLine2: 'Who I am now', homeDetail: '', timelineNear: '3 months', timelineMid: '6 months', timelineFar: 'Future' },
-            };
-            localStorage.setItem(storageKey, JSON.stringify(blankState));
-            location.reload();
-          }
+          openConfirm(
+            'Board leeren',
+            'Es bleiben nur der Home-Planet und 2 leere Ziel-Planeten. Alle anderen Einträge werden gelöscht.',
+            () => {
+              const blankState = {
+                nodes: [
+                  { node_key: 'target1', cat: 'destination', title: 'What I will be 1', subtitle: 'Dein erstes Ziel', detail: '', status: 'planned', x: 280, y: 75, color: '#378ADD', dark_color: '#040D1C', radius: 68 },
+                  { node_key: 'target2', cat: 'destination', title: 'What I will be 2', subtitle: 'Dein zweites Ziel', detail: '', status: 'planned', x: 620, y: 75, color: '#1D9E75', dark_color: '#041510', radius: 68 },
+                ],
+                edges: [],
+                meta: { homeTitle: 'What I am …', homeLine1: 'What I am now', homeLine2: 'Who I am now', homeDetail: '', timelineNear: '3 months', timelineMid: '6 months', timelineFar: 'Future' },
+              };
+              localStorage.setItem(storageKey, JSON.stringify(blankState));
+              location.reload();
+            }
+          );
         });
 
         container.querySelector('#menu-reset-btn')?.addEventListener('click', () => {
           closeMenu();
-          if (confirm('Board zurücksetzen? Alle eigenen Änderungen gehen verloren.')) {
-            localStorage.removeItem(storageKey);
-            location.reload();
-          }
+          openConfirm(
+            'Board zurücksetzen',
+            'Alle eigenen Änderungen gehen verloren und das Board wird auf den Ausgangszustand zurückgesetzt.',
+            () => {
+              localStorage.removeItem(storageKey);
+              location.reload();
+            }
+          );
         });
 
-        document.addEventListener('click', () => { closeMenu(); closeSettings(); });
+        document.addEventListener('click', () => { closeMenu(); closeSettings(); closeLangPanel(); });
 
         container.querySelector('#clean-db-btn')?.addEventListener('click', async () => {
           if (settingsPanel) settingsPanel.style.display = 'none';

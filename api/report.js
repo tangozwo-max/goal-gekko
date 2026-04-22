@@ -85,6 +85,13 @@ function buildPrompt(boardState) {
   return lines.join('\n');
 }
 
+const LANGUAGE_NAMES = {
+  de: 'German', en: 'English', es: 'Spanish', fr: 'French', it: 'Italian',
+  pt: 'Portuguese', nl: 'Dutch', pl: 'Polish', ru: 'Russian', ja: 'Japanese',
+  zh: 'Chinese', ko: 'Korean', ar: 'Arabic', tr: 'Turkish', sv: 'Swedish',
+  no: 'Norwegian', da: 'Danish', fi: 'Finnish', uk: 'Ukrainian', hi: 'Hindi',
+};
+
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
@@ -92,8 +99,10 @@ export default async function handler(req, res) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' }); return; }
 
-  const { boardState } = req.body || {};
-  const userPrompt = buildPrompt(boardState);
+  const { boardState, language } = req.body || {};
+  const langCode = language && LANGUAGE_NAMES[language] ? language : null;
+  const langInstruction = langCode ? `\n\nIMPORTANT: Write the entire report in ${LANGUAGE_NAMES[langCode]} (language code: ${langCode}). Do not use any other language.` : '';
+  const userPrompt = buildPrompt(boardState) + langInstruction;
 
   const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
