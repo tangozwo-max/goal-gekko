@@ -456,8 +456,39 @@ const { fullscreen = true } = Astro.props;
 
         container.querySelector('#menu-print-btn')?.addEventListener('click', () => {
           closeMenu();
+          const svgEl = container.querySelector('#cvg') as HTMLElement | null;
+          const cvwrap = container.querySelector('.cvwrap') as HTMLElement | null;
+          const origSvgBg = svgEl?.style.background ?? '';
+          const origCvwrapBg = cvwrap?.style.background ?? '';
+          const changed: Array<[Element, string, string]> = [];
+          if (svgEl) {
+            svgEl.style.background = '#ffffff';
+            if (cvwrap) cvwrap.style.background = '#ffffff';
+            // White text → dark
+            svgEl.querySelectorAll('text').forEach((el) => {
+              const fill = el.getAttribute('fill') || '';
+              if (/rgba\(255,255,255,/.test(fill) || fill === '#fff' || fill === 'white' || fill === '#ffffff') {
+                changed.push([el, 'fill', fill]);
+                const alpha = parseFloat(fill.split(',')[3] ?? '1');
+                el.setAttribute('fill', `rgba(0,0,0,${Math.min(1, alpha + 0.35).toFixed(2)})`);
+              }
+            });
+            // White/faint edge strokes → visible dark
+            svgEl.querySelectorAll('path,line').forEach((el) => {
+              const stroke = el.getAttribute('stroke') || '';
+              if (/rgba\(255,255,255,/.test(stroke)) {
+                changed.push([el, 'stroke', stroke]);
+                el.setAttribute('stroke', 'rgba(0,0,0,0.28)');
+              }
+            });
+          }
           document.body.classList.add('gg-print-active');
-          window.addEventListener('afterprint', () => document.body.classList.remove('gg-print-active'), { once: true });
+          window.addEventListener('afterprint', () => {
+            document.body.classList.remove('gg-print-active');
+            if (svgEl) svgEl.style.background = origSvgBg;
+            if (cvwrap) cvwrap.style.background = origCvwrapBg;
+            changed.forEach(([el, attr, val]) => el.setAttribute(attr, val));
+          }, { once: true });
           setTimeout(() => window.print(), 50);
         });
 

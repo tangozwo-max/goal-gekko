@@ -1129,8 +1129,6 @@ body:has(#landing) main {
   body.gg-print-active .career-board-app--fullscreen #cvg {
     width: 100% !important;
     height: 100% !important;
-    background: #ffffff !important;
-    filter: invert(92%) hue-rotate(180deg);
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
