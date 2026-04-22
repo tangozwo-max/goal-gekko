@@ -481,6 +481,11 @@ const { fullscreen = true } = Astro.props;
                 el.setAttribute('stroke', 'rgba(0,0,0,0.28)');
               }
             });
+            // Planet dark backgrounds → light gray
+            svgEl.querySelectorAll('circle[fill="#16283D"]').forEach((el) => {
+              changed.push([el, 'fill', '#16283D']);
+              el.setAttribute('fill', '#eef0f3');
+            });
           }
           document.body.classList.add('gg-print-active');
           window.addEventListener('afterprint', () => {
