@@ -160,7 +160,7 @@ const { fullscreen = true } = Astro.props;
     <a id="privacy-link" href="#" style="font-size:9px;color:rgba(255,255,255,0.22);text-decoration:none;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Datenschutz</a>
     <button id="impressum-link" type="button" data-impressum-trigger style="font-size:9px;color:rgba(255,255,255,0.22);background:none;border:none;padding:0;cursor:pointer;transition:color .2s;letter-spacing:.04em;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.22)'">Impressum</button>
   </div>
-  <span style="font-size:7.5px;color:rgba(255,255,255,0.18);letter-spacing:.05em;font-family:inherit;align-self:flex-end;">v0.027</span>
+  <span style="font-size:7.5px;color:rgba(255,255,255,0.18);letter-spacing:.05em;font-family:inherit;align-self:flex-end;">v0.028</span>
 </div>
 <div style="position:fixed;top:20px;right:20px;z-index:50;display:flex;gap:8px;align-items:center;">
   <button id="ai-chat-btn" title="Chat with Gecko AI" style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.28);border-radius:50%;width:29px;height:29px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:0.85;transition:opacity .2s,border-color .2s,background .2s;" onmouseover="this.style.opacity='1';this.style.borderColor='rgba(0,255,136,0.7)';this.style.background='rgba(0,255,136,0.15)'" onmouseout="this.style.opacity='0.85';this.style.borderColor='rgba(0,255,136,0.28)';this.style.background='rgba(0,255,136,0.08)'" onclick="var t=document.getElementById('gekko-toggle');if(t)t.click()"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 2 L11.6 8.4 L18 10 L11.6 11.6 L10 18 L8.4 11.6 L2 10 L8.4 8.4 Z" fill="#00FF88"/><circle cx="16.5" cy="3.5" r="1.4" fill="#00FF88" opacity="0.6"/><circle cx="4" cy="16" r="1" fill="#00FF88" opacity="0.45"/></svg></button>
@@ -169,6 +169,7 @@ const { fullscreen = true } = Astro.props;
     <div id="menu-panel" style="display:none;position:absolute;top:36px;right:0;min-width:200px;background:rgba(6,10,22,0.97);border:1px solid rgba(255,255,255,0.10);border-radius:10px;padding:7px;z-index:200;box-shadow:0 8px 28px rgba(0,0,0,0.65);">
       <button id="menu-help-btn" style="width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:8px 11px;color:rgba(255,255,255,0.62);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:9px;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.92)'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,0.62)'"><span style="font-size:14px;opacity:.65;min-width:16px;text-align:center;">?</span> Hilfe</button>
       <button id="menu-print-btn" style="width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:8px 11px;color:rgba(255,255,255,0.62);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:9px;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.92)'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,0.62)'"><span style="font-size:14px;opacity:.65;min-width:16px;text-align:center;">⎙</span> Drucken</button>
+      <button id="menu-report-btn" style="width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:8px 11px;color:rgba(255,255,255,0.62);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:9px;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.92)'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,0.62)'"><span style="font-size:14px;opacity:.65;min-width:16px;text-align:center;">✦</span> Strategieplan PDF</button>
       <div style="border-top:1px solid rgba(255,255,255,0.07);margin:5px 0;"></div>
       <button id="menu-settings-btn" style="width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:8px 11px;color:rgba(255,255,255,0.62);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:9px;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.92)'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,0.62)'"><span style="font-size:14px;opacity:.65;min-width:16px;text-align:center;">⚙</span> Einstellungen</button>
       <div style="border-top:1px solid rgba(255,255,255,0.07);margin:5px 0;"></div>
@@ -495,6 +496,107 @@ const { fullscreen = true } = Astro.props;
             changed.forEach(([el, attr, val]) => el.setAttribute(attr, val));
           }, { once: true });
           setTimeout(() => window.print(), 50);
+        });
+
+        const buildPrintDoc = (svgHtml: string, reportHtml: string, pName: string, pRole: string, pDate: string): string => {
+          const H = (s: string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+          return [
+            '<!DOCTYPE html><html><head><meta charset="utf-8">',
+            '<title>' + H(pName) + ' — Strategieplan</title><style>',
+            '@page{size:A4 landscape;margin:14mm 18mm}',
+            '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}',
+            'body{font-family:Georgia,"Times New Roman",serif;color:#1a1a2e;background:#fff}',
+            '.pg{height:100vh;display:flex;flex-direction:column}',
+            '.pg-board{page-break-after:always}',
+            '.hdr{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:8px;border-bottom:1.5px solid #1a1a2e;margin-bottom:12px}',
+            '.hdr-name{font-size:18px;font-weight:700;letter-spacing:-.03em}',
+            '.hdr-sub{font-size:9.5px;color:#6b7280;margin-top:2px}',
+            '.hdr-r{text-align:right;font-size:9px;color:#9ca3af}',
+            '.hdr-r b{display:block;font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(0,200,90,.8);margin-bottom:2px}',
+            '.board-wrap{flex:1;border:1px solid #e5e7eb;border-radius:6px;overflow:hidden}',
+            '.board-wrap svg{width:100%;height:100%;display:block;background:#fff}',
+            '.report-body{column-count:2;column-gap:22px;margin-top:2px}',
+            '.report-body h2{column-span:all;font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#9ca3af;border-bottom:1px solid #e5e7eb;padding-bottom:4px;margin:16px 0 9px}',
+            '.report-body h2:first-child{margin-top:0}',
+            '.report-body h3{font-size:11px;font-weight:700;color:#1a1a2e;margin:10px 0 5px}',
+            '.report-body p{font-size:10.5px;line-height:1.78;color:#374151;margin-bottom:8px}',
+            '.report-body ul{padding-left:15px;margin-bottom:8px}',
+            '.report-body li{font-size:10.5px;line-height:1.78;color:#374151;margin-bottom:3px}',
+            '.report-body strong{color:#1a1a2e}.report-body em{color:#4b5563}',
+            '.footer{margin-top:auto;padding-top:8px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:8px;color:#9ca3af}',
+            '</style></head><body>',
+            '<div class="pg pg-board">',
+            '  <div class="hdr"><div><div class="hdr-name">' + H(pName) + '</div><div class="hdr-sub">' + H(pRole) + '</div></div>',
+            '  <div class="hdr-r"><b>Goal · Gekko</b>Karriere-Strategieplan · ' + H(pDate) + '</div></div>',
+            '  <div class="board-wrap">' + svgHtml + '</div>',
+            '</div>',
+            '<div class="pg pg-report">',
+            '  <div class="hdr"><div><div class="hdr-name" style="font-size:15px">' + H(pName) + ' — Strategieplan</div><div class="hdr-sub">' + H(pRole) + '</div></div>',
+            '  <div class="hdr-r"><b>Goal · Gekko</b>' + H(pDate) + '</div></div>',
+            '  <div class="report-body">' + reportHtml + '</div>',
+            '  <div class="footer"><span>Goal · Gekko · Karriere-Strategieplan</span><span>' + H(pDate) + '</span></div>',
+            '</div>',
+            '</body></html>',
+          ].join('\n');
+        };
+
+        container.querySelector('#menu-report-btn')?.addEventListener('click', async () => {
+          closeMenu();
+          const toast = container.querySelector<HTMLElement>('#sync-toast');
+          const setToast = (msg: string) => { if (toast) { toast.textContent = msg; toast.style.opacity = '1'; } };
+          const clearToast = () => { if (toast) toast.style.opacity = '0'; };
+          setToast('✦ KI erstellt deinen Strategieplan …');
+          try {
+            const boardState = (window as any).__gekkoBoardData?.();
+            const res = await fetch('/api/report', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ boardState }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const { report } = await res.json();
+
+            // Clone SVG and apply print colors
+            const svgSource = container.querySelector<SVGSVGElement>('#cvg');
+            let svgHtml = '';
+            if (svgSource) {
+              const clone = svgSource.cloneNode(true) as SVGSVGElement;
+              clone.setAttribute('width', '100%');
+              clone.setAttribute('height', '100%');
+              (clone as HTMLElement).style.cssText = 'background:#ffffff';
+              clone.querySelectorAll('text').forEach((el) => {
+                const fill = el.getAttribute('fill') || '';
+                if (/rgba\(255,255,255,/.test(fill)) {
+                  const alpha = parseFloat(fill.split(',')[3] ?? '1');
+                  el.setAttribute('fill', `rgba(0,0,0,${Math.min(1, alpha + 0.35).toFixed(2)})`);
+                }
+              });
+              clone.querySelectorAll('path,line').forEach((el) => {
+                const stroke = el.getAttribute('stroke') || '';
+                if (/rgba\(255,255,255,/.test(stroke)) el.setAttribute('stroke', 'rgba(0,0,0,0.28)');
+              });
+              clone.querySelectorAll('circle[fill="#16283D"]').forEach((el) => {
+                el.setAttribute('fill', '#eef0f3');
+              });
+              svgHtml = clone.outerHTML;
+            }
+
+            const bMeta = boardState?.meta || {};
+            const pName = bMeta.homeTitle || 'Career Strategy';
+            const pRole = bMeta.homeLine1 || '';
+            const pDate = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+
+            const win = window.open('', '_blank', 'width=1200,height=850');
+            if (!win) { alert('Popup blockiert — bitte im Browser-Dialog erlauben.'); clearToast(); return; }
+            win.document.write(buildPrintDoc(svgHtml, report, pName, pRole, pDate));
+            win.document.close();
+            clearToast();
+            setTimeout(() => win.print(), 900);
+          } catch (err) {
+            console.error('Report error:', err);
+            clearToast();
+            alert('Fehler beim Erstellen des Strategieplans. Bitte erneut versuchen.');
+          }
         });
 
         container.querySelector('#menu-settings-btn')?.addEventListener('click', (e) => {
