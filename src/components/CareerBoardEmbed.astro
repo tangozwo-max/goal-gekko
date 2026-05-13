@@ -327,7 +327,7 @@ const { fullscreen = true } = Astro.props;
     <input id="te-far" placeholder="Upper band label">
     <div class="pnl-btns"><button class="btn" data-action="saveTep">Save</button><button class="btn" data-action="closeTep">Cancel</button></div>
   </div>
-  <div id="ndp" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:150;width:340px;background:rgba(6,10,22,0.97);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:20px 20px 16px;box-shadow:0 24px 64px rgba(0,0,0,0.75);">
+  <div id="ndp" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:150;width:340px;max-height:calc(100dvh - 3rem);overflow-y:auto;background:rgba(6,10,22,0.97);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:20px 20px 16px;box-shadow:0 24px 64px rgba(0,0,0,0.75);">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
       <div style="flex:1;min-width:0;">
         <div id="ndp-cat" style="font-size:7.5px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;margin-bottom:5px;"></div>
@@ -1043,6 +1043,7 @@ const { fullscreen = true } = Astro.props;
       let dragOx = 0;
       let dragOy = 0;
       let hDrag = false;
+      let justDragged = false;
       const ds = { x: 0, y: 0 };
       let touchSelId = null;
       let touchSelType = null;
@@ -1532,7 +1533,7 @@ const { fullscreen = true } = Astro.props;
         const dc = Math.round(planet.r * 0.7);
         group.addEventListener('mousedown', () => { hTip(true); });
         group.addEventListener('click', (event) => {
-          if (hDrag) return;
+          if (hDrag || justDragged) return;
           event.stopPropagation();
           openNdp(planet.id, 'planet');
         });
@@ -1586,7 +1587,7 @@ const { fullscreen = true } = Astro.props;
         }
         group.addEventListener('mousedown', () => { hTip(true); });
         group.addEventListener('click', (event) => {
-          if (hDrag) return;
+          if (hDrag || justDragged) return;
           event.stopPropagation();
           openNdp(node.id, 'star');
         });
@@ -2258,13 +2259,12 @@ const { fullscreen = true } = Astro.props;
       };
       const handleMouseUp = () => {
         if (!dragId) return;
-        const releasedId = dragId;
-        const releasedType = dragType;
         if (hDrag && dragId) {
           const entity = dragType === 'p' ? pmap[dragId] : nmap[dragId];
           if (entity) dbSavePosition(dragId, entity.x, entity.y);
+          justDragged = true;
+          setTimeout(() => { justDragged = false; }, 0);
         }
-        // URL opening removed — popup (openNdp) is triggered by the click event on the node group
         hDrag = false;
         dragId = null;
         dragType = null;
