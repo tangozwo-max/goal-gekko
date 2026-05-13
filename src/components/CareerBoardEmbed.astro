@@ -267,6 +267,7 @@ const { fullscreen = true } = Astro.props;
   ${noticeMarkup}
   <div id="sync-toast" style="position:fixed;bottom:20px;right:20px;z-index:60;background:rgba(6,10,22,0.9);border:1px solid rgba(0,255,136,0.25);border-radius:6px;padding:5px 11px;font-size:10px;color:rgba(0,255,136,0.75);letter-spacing:.04em;pointer-events:none;opacity:0;transition:opacity .35s;white-space:nowrap;"></div>
   <span id="hint" style="display:none;">Hover for info · drag to move · right-click for options</span>
+  <span id="hint-touch" style="display:none;position:fixed;bottom:56px;left:50%;transform:translateX(-50%);background:rgba(6,10,22,0.88);border:1px solid rgba(255,255,255,0.10);border-radius:20px;padding:5px 14px;font-size:10px;color:rgba(255,255,255,0.45);letter-spacing:.03em;pointer-events:none;white-space:nowrap;z-index:50;">Tap to select · drag to move · tap again to open</span>
   <div class="leg" style="position:fixed;bottom:20px;left:20px;z-index:50;display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
     <span><svg width="9" height="9" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="rgba(43,148,108,0.34)" stroke="#8fe0bc" stroke-width="0.8"/></svg>Job</span>
     <span><svg width="9" height="9" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="rgba(176,92,68,0.34)" stroke="#ffb59e" stroke-width="0.8"/></svg>Other</span>
@@ -656,7 +657,7 @@ const { fullscreen = true } = Astro.props;
             '.brd-badge{font-size:7px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#0057A8}',
             '.board-outer{flex:1;display:flex;flex-direction:column;justify-content:center;overflow:hidden;min-height:0}',
             '.board-wrap{width:100%;aspect-ratio:4/3;overflow:hidden;border:1px solid #E5E9F0;border-radius:4px;flex-shrink:0}',
-            '.board-wrap svg{width:100%;height:100%;display:block}',
+            '.board-wrap svg{width:100%;height:100%;display:block;touch-action:none}',
             '.brd-ftr{display:flex;justify-content:space-between;padding-top:7px;border-top:1px solid #DDE2EC;margin-top:10px;font-size:7.5px;color:#9CA3AF;flex-shrink:0}',
             // ── Shared portrait page header/footer ──────────────────
             '.pghdr{display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:2px solid #001F4D;margin-bottom:22px;flex-shrink:0}',
@@ -1043,6 +1044,9 @@ const { fullscreen = true } = Astro.props;
       let dragOy = 0;
       let hDrag = false;
       const ds = { x: 0, y: 0 };
+      let touchSelId = null;
+      let touchSelType = null;
+      let touchWasPreSel = false;
       let mode = null;
       let conn = null;
       let editId = null;
@@ -2269,6 +2273,94 @@ const { fullscreen = true } = Astro.props;
       svg.addEventListener('mousedown', handleMouseDown);
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+
+      const setTouchSel = (id, type) => {
+        if (touchSelId) {
+          const prev = touchSelType === 'p' ? `pr-${touchSelId}` : `r-${touchSelId}`;
+          document.getElementById(prev)?.setAttribute('opacity', '0');
+        }
+        touchSelId = id;
+        touchSelType = type;
+        if (id) {
+          const ring = type === 'p' ? `pr-${id}` : `r-${id}`;
+          document.getElementById(ring)?.setAttribute('opacity', '1');
+        }
+      };
+
+      const getTouchPos = (touch) => {
+        const rect = svg.getBoundingClientRect();
+        return viewportToBoard(touch.clientX, touch.clientY, rect);
+      };
+
+      const handleTouchStart = (event) => {
+        if (event.touches.length !== 1) { setTouchSel(null, null); return; }
+        const touch = event.touches[0];
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        const star = el?.closest('.sn');
+        const planet = !star && el?.closest('.pn');
+        let id, type, entity;
+        if (star) { id = star.getAttribute('data-id'); type = 's'; entity = nmap[id]; }
+        else if (planet) { id = planet.getAttribute('data-pid'); type = 'p'; entity = pmap[id]; }
+        if (!entity || !id) { setTouchSel(null, null); return; }
+        event.preventDefault();
+        hTip(true);
+        touchWasPreSel = touchSelId === id;
+        setTouchSel(id, type);
+        dragId = id;
+        dragType = type;
+        hDrag = false;
+        const pos = getTouchPos(touch);
+        ds.x = pos.x;
+        ds.y = pos.y;
+        dragOx = pos.x - entity.x;
+        dragOy = pos.y - entity.y;
+      };
+
+      const handleTouchMove = (event) => {
+        if (!dragId || event.touches.length !== 1) return;
+        event.preventDefault();
+        const touch = event.touches[0];
+        const pos = getTouchPos(touch);
+        const dx = pos.x - ds.x;
+        const dy = pos.y - ds.y;
+        if (!hDrag && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) { hDrag = true; hTip(true); }
+        if (hDrag) {
+          const entity = dragType === 'p' ? pmap[dragId] : nmap[dragId];
+          if (!entity) return;
+          const minX = dragType === 'p' ? entity.r + 8 : 10;
+          const maxX = dragType === 'p' ? VW - entity.r - 8 : VW - 10;
+          const minY = dragType === 'p' ? entity.r + 8 : 10;
+          const maxY = dragType === 'p' ? VH - entity.r - 8 : VH - 18;
+          entity.x = Math.max(minX, Math.min(maxX, pos.x - dragOx));
+          entity.y = Math.max(minY, Math.min(maxY, pos.y - dragOy));
+          document.getElementById(`${dragType === 'p' ? 'pl' : 'sn'}-${dragId}`)?.setAttribute('transform', `translate(${entity.x},${entity.y})`);
+          drawEdges();
+        }
+      };
+
+      const handleTouchEnd = () => {
+        if (!dragId) return;
+        if (hDrag) {
+          const entity = dragType === 'p' ? pmap[dragId] : nmap[dragId];
+          if (entity) dbSavePosition(dragId, entity.x, entity.y);
+        } else if (touchWasPreSel) {
+          openNdp(dragId, dragType === 'p' ? 'planet' : 'star');
+          setTouchSel(null, null);
+        }
+        hDrag = false;
+        dragId = null;
+        dragType = null;
+      };
+
+      svg.addEventListener('touchstart', handleTouchStart, { passive: false });
+      svg.addEventListener('touchmove', handleTouchMove, { passive: false });
+      svg.addEventListener('touchend', handleTouchEnd);
+
+      const touchHintEl = container.querySelector('#hint-touch');
+      if (touchHintEl && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
+        touchHintEl.style.display = 'block';
+        setTimeout(() => { (touchHintEl as HTMLElement).style.transition = 'opacity 1s'; (touchHintEl as HTMLElement).style.opacity = '0'; }, 4000);
+      }
 
       // Expose board state + apply function for AI chat (Gecko)
       (window as any).__gekkoBoardData = () => ({
