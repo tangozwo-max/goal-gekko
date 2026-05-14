@@ -167,6 +167,8 @@ const { fullscreen = true } = Astro.props;
   <div style="position:relative;">
     <button id="menu-btn" title="Menü" style="background:none;border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:29px;height:29px;cursor:pointer;color:rgba(255,255,255,0.30);font-size:18px;line-height:1;padding:0;letter-spacing:0;opacity:0.7;transition:opacity .2s,color .2s,border-color .2s;" onmouseover="this.style.opacity='1';this.style.color='rgba(255,255,255,0.72)';this.style.borderColor='rgba(255,255,255,0.32)'" onmouseout="this.style.opacity='0.7';this.style.color='rgba(255,255,255,0.30)';this.style.borderColor='rgba(255,255,255,0.12)'">⋮</button>
     <div id="menu-panel" style="display:none;position:absolute;top:36px;right:0;min-width:200px;background:rgba(6,10,22,0.97);border:1px solid rgba(255,255,255,0.10);border-radius:10px;padding:7px;z-index:200;box-shadow:0 8px 28px rgba(0,0,0,0.65);">
+      <button id="menu-save-btn" style="width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:8px 11px;color:rgba(255,255,255,0.62);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:9px;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.92)'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,0.62)'"><span style="font-size:14px;opacity:.65;min-width:16px;text-align:center;">☁</span> Save all</button>
+      <div style="border-top:1px solid rgba(255,255,255,0.07);margin:5px 0;"></div>
       <button id="menu-help-btn" style="width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:8px 11px;color:rgba(255,255,255,0.62);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:9px;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.92)'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,0.62)'"><span style="font-size:14px;opacity:.65;min-width:16px;text-align:center;">?</span> Hilfe</button>
       <button id="menu-print-btn" style="width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:8px 11px;color:rgba(255,255,255,0.62);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:9px;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.92)'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,0.62)'"><span style="font-size:14px;opacity:.65;min-width:16px;text-align:center;">⎙</span> Drucken</button>
       <button id="menu-report-btn" style="width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:8px 11px;color:rgba(255,255,255,0.62);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:9px;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.92)'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,0.62)'"><span style="font-size:14px;opacity:.65;min-width:16px;text-align:center;">✦</span> Strategieplan PDF</button>
@@ -548,6 +550,7 @@ const { fullscreen = true } = Astro.props;
         langPanel?.addEventListener('click', (e) => e.stopPropagation());
         container.querySelector('#report-lang-close-btn')?.addEventListener('click', closeLangPanel);
 
+        container.querySelector('#menu-save-btn')?.addEventListener('click', () => { closeMenu(); manualSaveAll(); });
         container.querySelector('#menu-help-btn')?.addEventListener('click', () => { closeMenu(); openHelp(); });
 
         container.querySelector('#menu-print-btn')?.addEventListener('click', () => {
@@ -1200,8 +1203,22 @@ const { fullscreen = true } = Astro.props;
           return;
         }
 
-        db('nodes').insert({ ...data, node_key: nodeKey, board_id: boardId, user_id: userId })
-          .then(({ error }) => error ? showSyncToast('⚠ Save failed') : showSyncToast('☁ Saved'));
+        db('nodes').upsert(
+          { ...data, node_key: nodeKey, board_id: boardId, user_id: userId, updated_at: new Date().toISOString() },
+          { onConflict: 'board_id,node_key' }
+        ).then(({ error }) => error ? showSyncToast('⚠ Save failed') : showSyncToast('☁ Saved'));
+      };
+
+      const manualSaveAll = async () => {
+        persistLocalState();
+        if (persistenceMode !== 'remote' || !db) { showSyncToast('☁ Saved locally'); return; }
+        showSyncToast('Syncing…');
+        const allNodes = [
+          ...planets.map(p => ({ node_key: p.id, board_id: boardId, user_id: userId, updated_at: new Date().toISOString(), cat: 'destination', title: p.t1, subtitle: p.t2, detail: p.detail, status: 'planned', x: p.x, y: p.y, color: (pcm[p.cid] || pcm.teal).c, dark_color: (pcm[p.cid] || pcm.teal).k, radius: p.r })),
+          ...nodes.map(n => ({ node_key: n.id, board_id: boardId, user_id: userId, updated_at: new Date().toISOString(), cat: n.cat, title: n.title, subtitle: n.sub, detail: n.detail, status: n.status, url: n.url, costs: n.cost || null, time_in_months: n.time ? Number(n.time) : null, x: n.x, y: n.y })),
+        ];
+        const { error } = await db('nodes').upsert(allNodes, { onConflict: 'board_id,node_key' });
+        showSyncToast(error ? '⚠ Sync failed' : '☁ All saved');
       };
 
       const dbDeleteNode = (nodeKey) => {
@@ -1564,11 +1581,12 @@ const { fullscreen = true } = Astro.props;
         const status = STAT[statusKey] || STAT.planned;
         const group = E('g', { id: `sn-${node.id}`, transform: `translate(${node.x},${node.y})`, 'data-id': node.id, class: 'sn' }, sgG);
         const sprite = E('g', { class: 'sn-sprite' }, group);
-        // Halo = status color (grey planned · blue ongoing · green done), star = category color
-        const halo = E('circle', { cx: '0', cy: '0', r: '13', fill: `url(#sgrd-s-${statusKey})`, opacity: '0.85' }, sprite);
+        const halo = E('circle', { cx: '0', cy: '0', r: '13', fill: `url(#sgrd-s-${statusKey})`, opacity: '0' }, sprite);
         const sparkle = E('circle', { cx: '0', cy: '0', r: '9', fill: cat.c, filter: 'url(#glow)', opacity: '0.12' }, sprite);
         const starShape = E('path', { d: sp(7), fill: cat.c, filter: 'url(#glow)', opacity: status.o }, sprite);
         E('circle', { cx: '0', cy: '0', r: '13', fill: 'none', stroke: cat.c, 'stroke-width': '2.5', opacity: '0', id: `r-${node.id}` }, sprite);
+        if (statusKey === 'ongoing') E('circle', { cx: '10', cy: '-5', r: '2.2', fill: '#5098D4', opacity: '0.95' }, group);
+        if (statusKey === 'done') E('circle', { cx: '10', cy: '-5', r: '2.2', fill: '#40B978', opacity: '0.95' }, group);
         const title = E('text', { x: '14', y: '-3', 'font-size': '8.5', 'font-weight': '500', fill: 'rgba(255,255,255,0.9)' }, group);
         title.textContent = node.title;
         const hasSub = node.sub && node.sub.trim();
@@ -1862,7 +1880,7 @@ const { fullscreen = true } = Astro.props;
           const planet = pmap[id];
           if (!planet) return;
           if (catEl)    { catEl.textContent = 'Destination'; catEl.style.color = 'rgba(92,174,255,0.85)'; }
-          if (titleEl)  titleEl.textContent = planet.t1 || '';
+          if (titleEl)  { titleEl.style.display = ''; titleEl.textContent = planet.t1 || ''; }
           if (subEl)    { subEl.textContent = planet.t2 || ''; subEl.style.display = planet.t2 ? 'block' : 'none'; }
           if (detailEl) { detailEl.innerHTML = planet.detail ? planet.detail.replace(/\n/g,'<br>') : ''; detailEl.style.display = planet.detail ? 'block' : 'none'; }
           if (metaEl)   metaEl.style.display = 'none';
@@ -1878,7 +1896,16 @@ const { fullscreen = true } = Astro.props;
           const statusLabels: Record<string,string> = { planned: 'Planned', ongoing: 'Active', done: 'Done' };
           const statusColors: Record<string,string> = { planned: 'rgba(157,163,184,0.75)', ongoing: 'rgba(100,160,220,0.85)', done: 'rgba(64,185,120,0.85)' };
           if (catEl)    { catEl.textContent = cat.l; catEl.style.color = cat.c; }
-          if (titleEl)  titleEl.textContent = node.title || '';
+          if (titleEl) {
+            const dot = statusKey === 'done'
+              ? '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#40B978;vertical-align:middle;margin-right:6px;flex-shrink:0;"></span>'
+              : statusKey === 'ongoing'
+              ? '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#5098D4;vertical-align:middle;margin-right:6px;flex-shrink:0;"></span>'
+              : '';
+            titleEl.style.display = 'flex';
+            titleEl.style.alignItems = 'center';
+            titleEl.innerHTML = dot + `<span>${escHtml(node.title || '')}</span>`;
+          }
           if (subEl)    { subEl.textContent = node.sub || ''; subEl.style.display = node.sub ? 'block' : 'none'; }
           if (detailEl) { detailEl.innerHTML = node.detail ? node.detail.replace(/\n/g,'<br>') : ''; detailEl.style.display = node.detail ? 'block' : 'none'; }
           if (metaEl) {
@@ -1889,7 +1916,7 @@ const { fullscreen = true } = Astro.props;
             metaEl.textContent = parts.join('  ·  ');
           }
           if (urlEl) { if (node.url) { urlEl.href = node.url; urlEl.textContent = node.url; urlEl.style.display = 'block'; } else { urlEl.style.display = 'none'; } }
-          if (statusEl) { statusEl.style.display = 'flex'; statusEl.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${statusColors[statusKey]};display:inline-block;flex-shrink:0;"></span><span style="font-size:9.5px;color:rgba(255,255,255,0.35);letter-spacing:.06em;">${statusLabels[statusKey]}</span>`; }
+          if (statusEl) statusEl.style.display = 'none';
           if (dupeBtn)  dupeBtn.style.display = 'block';
         }
 
