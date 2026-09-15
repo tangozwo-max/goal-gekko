@@ -47,6 +47,15 @@ const { fullscreen = true } = Astro.props;
     if (!(stateEl instanceof HTMLElement) || !(mountEl instanceof HTMLElement)) return;
 
     const hasSupabase = Boolean(supabaseUrl && supabaseAnonKey);
+    if (!hasSupabase) {
+      // Falling back to the public board here is correct, but it is also what
+      // a healthy signed-out visit looks like. Say so, or a broken deploy is
+      // indistinguishable from Browser Mode.
+      console.error(
+        '[goal-gekko] PUBLIC_SUPABASE_URL / PUBLIC_SUPABASE_KEY missing at build time — ' +
+        'cloud boards are unavailable and this session is Browser Mode only.'
+      );
+    }
     const supabase = hasSupabase ? getBrowserSupabaseClient(supabaseUrl, supabaseAnonKey) : null;
     const db = (hasSupabase && supabase) ? (t: string) => supabase.schema(supabaseDbSchema).from(t) : null;
 

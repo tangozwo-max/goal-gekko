@@ -32,7 +32,12 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_KEY ?? '';
       if (!ui) return;
       const supabaseUrl  = ui.dataset.sbUrl  ?? '';
       const supabaseAnonKey = ui.dataset.sbKey ?? '';
-      if (!supabaseUrl || !supabaseAnonKey) return;
+      if (!supabaseUrl || !supabaseAnonKey) {
+        // No Supabase means no Login Mode, so the Browser/Login toggle would
+        // be a dead control. Hide it, but leave a trace.
+        console.error('[goal-gekko] Supabase is not configured — the Browser/Login toggle is hidden.');
+        return;
+      }
 
       const sb    = getBrowserSupabaseClient(supabaseUrl, supabaseAnonKey);
       const modal = document.getElementById('auth-modal');
